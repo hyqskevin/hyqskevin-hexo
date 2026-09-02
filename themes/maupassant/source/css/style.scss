@@ -1118,6 +1118,19 @@ screen and (min-width: 48em) {
 }
 
 
+/* mermaid diagrams (server-side rendered SVG) */
+.mermaid {
+    display: block;
+    text-align: center;
+    margin: 20px 0;
+    overflow-x: auto;
+}
+.mermaid svg {
+    max-width: 100%;
+    height: auto !important;
+}
+
+
 /* syntax highlight*/
 
 figure.highlight,

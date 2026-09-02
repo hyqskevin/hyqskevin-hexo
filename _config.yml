@@ -107,6 +107,21 @@ deploy:
   branch: master
   message: "site update: {{ now('YYYY-MM-DD HH:mm') }}"
 
+# mermaid
+mermaid:
+  enable: true
+  version: "11.4.0"
+  options:
+    theme: default
+    startOnLoad: true
+    flowchart:
+      useMaxWidth: true
+      htmlLabels: true
+    sequence:
+      useMaxWidth: true
+    gantt:
+      useMaxWidth: true
+
 # Live2D
 live2d:
   enable: true
