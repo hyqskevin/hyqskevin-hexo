@@ -461,6 +461,7 @@ tags:
 |---|---|
 | `title` | 取笔记第一个 `#` 标题，去掉日期和 `.md` 后缀；若原标题是内部文件名则**必须改写**为面向读者的标题 |
 | `date` | 默认使用今天日期 `YYYY-MM-DD 00:00:00`；如笔记正文里有明确日期（如论文 / 报告日期），用该日期 |
+| `description` | **必须填**（约 60–120 字中文摘要），覆盖 Hexo 自动摘要。Hexo 默认截取正文前 N 字当首页摘要，遇到 Mermaid/代码块/表格时会把 `<!-- mermaid -->`、CSS、`<table>` 等抓进去，首页显示就废了。**显式写 description 才能控制首页卡片质量**。 |
 | `categories` | 单值，从以下选一个：`study`、`notes`、`code`、`paper`、`repo`、`language-learning` |
 | `tags` | 3–5 个，从笔记里的 `tags:` 字段、Hashtag、双链主语里抽取，小写英文为主 |
 

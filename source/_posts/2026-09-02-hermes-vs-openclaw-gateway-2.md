@@ -1,6 +1,7 @@
 ---
 title: Hermes Agent 与 OpenClaw 在 Gateway 设计上的差异（中）：运行时行为
 date: 2026-09-02 00:00:00
+description: Hermes 配置改完下一条消息生效（cached-agent signature 自动 rebuild），OpenClaw 大部分要重启。故障模式上 OpenClaw 单点 gateway 有 #13758 / #63643 内存泄漏；Hermes 故障被隔在子进程。
 series:
   name: hermes-vs-openclaw-gateway
   index: 2

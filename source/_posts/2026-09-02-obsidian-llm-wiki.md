@@ -1,6 +1,7 @@
 ---
 title: Obsidian LLM Wiki 多端协同方案：让 4 个终端的笔记、Agent 配置、Skills 保持一致
 date: 2026-09-02 00:00:00
+description: 把笔记、Agent 配置、Skills、飞书知识库在云服务器、Mac Mini、MacBook、手机 4 端之间形成"一处修改、多处生效"的工作流。含数据流向图、各端实际配置（脱敏版）与 3 阶段自动化建议。
 categories:
   - notes
 tags:

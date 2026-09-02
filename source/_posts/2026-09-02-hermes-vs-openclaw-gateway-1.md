@@ -1,6 +1,7 @@
 ---
 title: Hermes Agent 与 OpenClaw 在 Gateway 设计上的差异（上）：设计哲学与架构
 date: 2026-09-02 00:00:00
+description: Hermes 是 Agent-First（学习 + 自我进化），OpenClaw 是 Gateway-First（路由 + 控制）。同样是单进程 gateway，但 Hermes 把"执行"甩到子进程，OpenClaw 塞回 gateway 自己，故障半径完全不同。
 series:
   name: hermes-vs-openclaw-gateway
   index: 1

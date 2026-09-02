@@ -1,6 +1,7 @@
 ---
 title: Hermes Agent 与 OpenClaw 在 Gateway 设计上的差异（下）：子系统与选型
 date: 2026-09-02 00:00:00
+description: 沙箱 / 浏览器 / Memory / Skills 四块横向对比 + 选型决策树。Hermes 沙箱 5 种后端 + 6 种浏览器栈 + 四层 Memory + 生成型 Skills；OpenClaw 3 种后端 + managed browser + 文件式 Memory + ClawHub 5700+ Skills。
 series:
   name: hermes-vs-openclaw-gateway
   index: 3
