@@ -38,7 +38,7 @@ graph TD
     Cloud(云服务器)
     Mini(Mac Mini)
     Book(MacBook)
-    iCloud(iCloud<br/>Obsidian Vault)
+    iCloud[iCloud / Obsidian Vault]
     GH_skills(GitHub Skills)
     GH_code(GitHub 项目)
     GH_blog(GitHub Blog)
@@ -46,19 +46,23 @@ graph TD
 
     Phone -.->|飞书App| Feishu
     Phone -.->|iCloud只读| iCloud
-    Mini <-->|实时双向| iCloud
-    Book <-->|实时双向| iCloud
+    Mini -->|实时双向| iCloud
+    iCloud -->|实时双向| Mini
+    Book -->|实时双向| iCloud
+    iCloud -->|实时双向| Book
     Cloud -->|feishu plugin| Feishu
     Mini -->|feishu plugin| Feishu
     Mini -->|feishu cli| Feishu
     Cloud -->|pull| GH_skills
     Mini -->|pull| GH_skills
     Book -->|pull| GH_skills
-    Cloud <-->|push/pull| GH_code
-    Mini <-->|push/pull| GH_code
+    Cloud -->|push/pull| GH_code
+    Mini -->|push/pull| GH_code
+    GH_code -->|push/pull| Cloud
+    GH_code -->|push/pull| Mini
     Mini -->|push| GH_blog
-    Cloud <-->|pull/push| GH_backup
-    Mini -->|push备份→云pull| GH_backup
+    Cloud -->|pull/push| GH_backup
+    Mini -->|备份到云pull| GH_backup
 ```
 
 几个关键流：

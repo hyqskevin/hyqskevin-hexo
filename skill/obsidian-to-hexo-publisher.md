@@ -364,6 +364,39 @@ data.content = data.content.replace(group[0], content);  // 只替换 mermaid �
 - 不要在 Mermaid 代码块里用 HTML 注释 `<!-- -->` —— markdown 解析器会先去掉，破坏语法
 - 中文标签建议用 `["中文"]` 形式包裹
 
+#### 5.4.1.1 mermaid 11.x 兼容性坑（踩过的雷）
+
+经过实测，mermaid 11.4 解析器在以下情况会**静默吞掉后续所有边**：
+
+| 触发 | 现象 | 修复写法 |
+|---|---|---|
+| Label 含 `→`（U+2192）字符 | 后续所有边消失，只渲染这条边之前的简单 `-->` | 改用 ASCII：`to`、`->`、`=>` |
+| `<-->` 双向边 | 只渲染一条单向，丢失另一边 | 拆成两条 `-->` 显式双向 |
+| 节点定义里用 `(...)` 含 `<br/>` 或特殊 HTML | iCloud 节点可能直接不渲染 | 改用 `[...]` 方括号语法 |
+
+**校验脚本**（发布前必跑，发现 mermaid 图异常第一时间定位）：
+
+```bash
+# 在 hexo 仓库根目录执行
+node -e "
+const fs = require('fs');
+const path = require('path');
+const file = 'source/_posts/<slug>.md';
+const src = fs.readFileSync(file, 'utf8');
+const m = src.match(/graph\s+TD\s+([\s\S]+?)\`\`\`/);
+if (!m) { console.log('no mermaid block'); process.exit(0); }
+const block = m[1];
+const nodes = (block.match(/^\s*[A-Za-z][A-Za-z0-9_]*\s*[\[\(]/gm) || []).length;
+const edges = (block.match(/-->|-\.->|<-->/g) || []).length;
+console.log('declared nodes:', nodes, 'edges:', edges);
+// 警告信号：含 → 或 <-->
+if (/→/.test(block)) console.warn('⚠️ contains →, replace with to/->');
+if (/<-->/.test(block)) console.warn('⚠️ contains <-->, replace with two -->');
+"
+```
+
+修后用 `npm run build` 看 public/ 下对应 HTML 的 `<svg>` 里 `<path class="path">` 数量 —— 应该是边数的 1–1.5 倍（双向拆 2 倍）。
+
 #### 5.4.2 Drawio（导出 SVG/PNG）
 
 Obsidian 的 `.drawio` 文件是 XML，**Hexo 不能直接渲染**。流程：
