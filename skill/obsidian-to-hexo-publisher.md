@@ -397,6 +397,100 @@ if (/<-->/.test(block)) console.warn('⚠️ contains <-->, replace with two -->
 
 修后用 `npm run build` 看 public/ 下对应 HTML 的 `<svg>` 里 `<path class="path">` 数量 —— 应该是边数的 1–1.5 倍（双向拆 2 倍）。
 
+#### 5.4.1.2 作图要点（设计原则 + 视觉规范）
+
+Mermaid 能渲染只是第一步。一张可读的图需要满足以下原则：
+
+**A. 选对图类型**
+
+| 想表达什么 | 用什么图 |
+|---|---|
+| 数据流向 / 状态流转 / 系统架构 | `graph TD`（自顶向下，最常见）或 `graph LR`（左右） |
+| 时序交互 / 多角色对话 | `sequenceDiagram` |
+| 项目进度 / 时间线 | `gantt` |
+| 类结构 / 继承关系 | `classDiagram` |
+| Git 分支策略 | `gitGraph` |
+| 流程 / 决策树 | `flowchart TD`（同 graph） |
+
+**B. 节点命名规范**
+
+- **6 个以内节点**：读者一眼能看全，超过 6 个图会变"地铁图"
+- **超过 6 个**：拆 subgraphs 分组（subgraph 标签用 `subgraph title ... end`）
+- **节点 ID 用英文**（如 `Mini`、`iCloud`），显示 label 用中文
+  - 错例：`手机(手机)` —— ID 重复
+  - 正例：`Phone(手机)` —— ID 简短、显示中文
+- **同义节点统一**：同一个概念在全文用同一个 ID（如 MacBook 别一会儿叫 Book 一会儿叫 Macbook）
+
+**C. 边类型语义化**
+
+| 边写法 | 含义 |
+|---|---|
+| `A --> B` | 强单向（如 push / write / 调用） |
+| `A -.-> B` | 弱单向 / 异步 / 只读（虚线） |
+| `A --> B; B --> A` | 显式双向（**优先用这种**，不要用 `<-->`，见上节） |
+| `A ==> B` | 加粗强调 |
+| `A ~~~ B` | 无箭头连接（仅表示关联） |
+
+每个箭头都加 `|label|` 说明传输内容（频率、协议、方向、限制），不要写"裸箭头"。
+
+**D. 布局原则**
+
+- **入口 → 处理 → 出口**：`graph TD` 从上往下读
+- **画布宽高控制**：节点 ≤ 10 + 边 ≤ 15 一屏能看完；超了用 subgraphs
+- **避免线条交叉**：mermaid 自动布局但复杂图会交叉严重；用 `subgraph` 分块能改善
+- **关键路径加粗**：`==>`
+
+**E. 标注与色块**（可选）
+
+```mermaid
+graph TD
+    A[节点 A]:::important --> B[节点 B]
+    classDef important fill:#f96,stroke:#333,stroke-width:4px
+```
+
+`classDef` 加自定义样式（背景色、边框），适合强调关键节点。
+
+**F. 反模式（不要这样做）**
+
+- ❌ 节点里塞整段说明文字（用注释 `%%` 注释里加，或正文里写）
+- ❌ 10+ 个节点不分 subgraphs
+- ❌ 边标签写"点击""然后""接着"（应当写协议 / 频率 / 方向）
+- ❌ 同一信息画两遍（数据流图 + 拓扑图 选一种画清楚）
+- ❌ 用 `→` / `<-->`（mermaid 11.4 兼容问题，见 §5.4.1.1）
+
+**G. 模板参考**
+
+```mermaid
+graph TD
+    subgraph 客户端
+        A[MacBook]
+        B[Mac Mini]
+    end
+    subgraph 服务端
+        C[云服务器]
+    end
+    subgraph 外部
+        D[iCloud]
+        E[飞书]
+    end
+
+    A -->|iCloud 双向| D
+    D -->|iCloud 双向| A
+    B -->|iCloud 双向| D
+    D -->|iCloud 双向| B
+    B -->|feishu plugin| E
+    C -->|feishu plugin| E
+
+    classDef client fill:#cde498,stroke:#13540c
+    classDef server fill:#ffd,stroke:#333
+    classDef external fill:#f96,stroke:#900
+    class A,B client
+    class C server
+    class D,E external
+```
+
+3 个 subgraph 分类（客户端/服务端/外部），颜色区分一目了然。复制这个模板改 ID 即可。
+
 #### 5.4.2 Drawio（导出 SVG/PNG）
 
 Obsidian 的 `.drawio` 文件是 XML，**Hexo 不能直接渲染**。流程：
