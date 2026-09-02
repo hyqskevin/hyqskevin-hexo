@@ -11,10 +11,13 @@ hexo.extend.filter.register('before_generate', function() {
   }
 
   const scssFiles = ['style.scss', 'donate.scss', 'search.scss', 'copyright.scss', 'copycode.scss'];
-  const result = sass.compile(path.join(scssDir, 'style.scss'), {
-    style: 'compressed',
-    loadPaths: [scssDir]
+  scssFiles.forEach(file => {
+    const result = sass.compile(path.join(scssDir, file), {
+      style: 'compressed',
+      loadPaths: [scssDir]
+    });
+    const outFile = file.replace(/\.scss$/, '.css');
+    fs.writeFileSync(path.join(cssDir, outFile), result.css);
+    console.log(`Compiled ${file} -> ${outFile}`);
   });
-  fs.writeFileSync(path.join(cssDir, 'style.css'), result.css);
-  console.log('Compiled style.scss -> style.css');
 });
