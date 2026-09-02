@@ -329,6 +329,74 @@ done
 - 文件名保持 Obsidian 原文，不强制改写（避免破坏外链与 Git 历史）
 - 长文件名（> 60 字符）建议改写，但需要同步更新博客引用
 
+### 5.4 图表处理（Mermaid / Drawio / Excalidraw）
+
+Obsidian 笔记里的图有三种来源，处理方式不同：
+
+#### 5.4.1 Mermaid（推荐，直接写）
+
+```mermaid
+graph TD
+    A[节点 A] --> B[节点 B]
+    B --> C[节点 C]
+```
+
+**博客自动支持**——仓库已装 `hexo-filter-mermaid`（commit `e50d9f0`），`hexo generate` 时自动用 Puppeteer 服务端渲染成 `<svg>` 内嵌 HTML。**无需任何导出步骤**，直接写代码块即可。
+
+支持的语法：flowchart / sequence / gantt / class / state / pie / git graph 等（Mermaid 全集）。
+
+注意事项：
+
+- 大图（> 1500px 宽）建议加 `flowchart.useMaxWidth: true`（_config.yml 已配）让它自适应页面宽度
+- 不要在 Mermaid 代码块里用 HTML 注释 `<!-- -->` —— markdown 解析器会先去掉，破坏语法
+- 中文标签建议用 `["中文"]` 形式包裹
+
+#### 5.4.2 Drawio（导出 SVG/PNG）
+
+Obsidian 的 `.drawio` 文件是 XML，**Hexo 不能直接渲染**。流程：
+
+1. 在 Obsidian 里打开 `.drawio` 文件
+2. **导出为 SVG**（优先）或 PNG：
+   - 菜单 → File → Export As → SVG
+   - 或快捷键 `Ctrl+Shift+E`
+3. 导出文件复制到 `source/pic/<category>/<filename>.svg`
+4. 博文中引用：
+
+```markdown
+![架构图说明](https://hyqskevin.github.io/pic/<category>/<filename>.svg)
+```
+
+#### 5.4.3 Excalidraw（导出 PNG/SVG）
+
+`creatives/<slug>/excalidraw/*.excalidraw` 同样不能直接渲染：
+
+1. 打开 .excalidraw 文件
+2. 菜单 → Export image → SVG（推荐）或 PNG
+3. 复制到 `source/pic/<category>/<filename>.svg`
+4. 博文里 `<img>` 引用
+
+#### 5.4.4 选择决策
+
+| 场景 | 推荐格式 |
+|---|---|
+| 简单流程图、数据流、状态机 | **Mermaid**（直接写代码，无导出） |
+| 复杂架构图、自由布局 | **Drawio / Excalidraw**（先在 GUI 工具画，再导出 SVG） |
+| 已有 Obsidian 画好的 Excalidraw | 导出 SVG 后嵌入 |
+
+#### 5.4.5 校验
+
+发布前跑：
+
+```bash
+# 检查所有 ```mermaid 块都渲染成了 SVG（而非代码块）
+grep -c "<div class=\"mermaid\">" public/<post-path>/index.html
+
+# 检查所有引用的图片文件都存在
+for img in $(grep -oE '/pic/[^)]+\.(svg|png|jpg)' source/_posts/<slug>.md); do
+  test -f "source$img" || echo "MISSING: $img"
+done
+```
+
 ## 6. 参考链接处理
 
 ### 6.1 三种链接语法
