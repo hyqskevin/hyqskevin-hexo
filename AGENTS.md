@@ -46,6 +46,8 @@
 - 部署走 `.github/workflows/deploy.yml`，**不要**手动 `hexo deploy`（与 CI 双源会冲突）
 - Dependabot（`.github/dependabot.yml`，daily 节奏）会提 npm 更新 PR，按需合
 - 关键 secrets：`GH_PAGES_TOKEN`（用于 gh-pages action），不要本地打印或泄露
+- **`package.json` 的 `postinstall` 钩子是必需的**——它跑 `scripts/patch-mermaid-renderer.js`，给 `hexo-filter-mermaid@1.0.0` 打补丁（这版有个 bug 会让 mermaid 块前后的正文丢失）。**不要 `npm install --ignore-scripts`**，否则 bug 会回归。
+- 修改 `package.json` 的 dependencies 后，如果插件版本升级到 1.x 以上，记得检查 `scripts/patch-mermaid-renderer.js` 的 marker 是否还有效——升级后正则或代码结构变了 patch 可能失效。
 
 ## 协作边界
 

@@ -343,6 +343,19 @@ graph TD
 
 **博客自动支持**——仓库已装 `hexo-filter-mermaid`（commit `e50d9f0`），`hexo generate` 时自动用 Puppeteer 服务端渲染成 `<svg>` 内嵌 HTML。**无需任何导出步骤**，直接写代码块即可。
 
+⚠️ **重要：hexo-filter-mermaid@1.0.0 有个 bug**——`lib/renderer.js` 的最后一行 `data.content = content` 会用局部变量（只含 mermaid div）**覆盖整篇文章正文**，导致 mermaid 块前后的所有内容丢失。表现为：博文中只能看到 mermaid 图，正文 / 标题 / 表格全没了。
+
+**修复方式**：`scripts/patch-mermaid-renderer.js`（idempotent）通过 `npm postinstall` 自动把：
+```js
+data.content = content;  // 覆盖整篇，丢失正文
+```
+改为：
+```js
+data.content = data.content.replace(group[0], content);  // 只替换 mermaid 块范围
+```
+
+`package.json` 已配 `"postinstall": "node scripts/patch-mermaid-renderer.js"`，任何 `npm install` 后会自动应用。**不要手动 `rm -rf node_modules` 后跳过 postinstall**——bug 会回归。
+
 支持的语法：flowchart / sequence / gantt / class / state / pie / git graph 等（Mermaid 全集）。
 
 注意事项：
