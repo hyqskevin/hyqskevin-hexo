@@ -917,7 +917,128 @@ brew install --cask \
   istat-menus
 ```
 
-## 二十一、参考
+## 二十一、装机后最容易踩的 5 个坑
+
+### 坑 1：SIP 关闭后系统升级挂掉
+
+**症状**：`sudo spctl assess --enable` 关闭 Gatekeeper 后系统大版本升级可能失败。
+**解决**：升级前重新开启 Gatekeeper。
+
+### 坑 2：默认 zsh PATH 不带 Homebrew
+
+**症状**：`brew install xxx` 装好后 `command not found`。
+**解决**：把 `eval "$(/opt/homebrew/bin/brew shellenv)"` 加到 `~/.zprofile`（zsh 默认登录 shell 读这个，不是 `.zshrc`）。
+
+### 坑 3：MySQL/Postgres 数据文件没备份就重装
+
+**症状**：`brew uninstall postgresql` 把 `~/Library/Application Support/Postgres` 一并删了。
+**解决**：卸载前先 `pg_dumpall > backup.sql` 或拷贝 data 目录。
+
+### 坑 4：Time Machine 备份到外接硬盘时机器休眠
+
+**症状**：备份中断，下次想恢复发现数据不全。
+**解决**：macOS 设置里关闭"电池供电时进入睡眠"，或在电源设置里选"防止自动睡眠"。
+
+### 坑 5：dotfiles 装好后 SSH key 丢了
+
+**症状**：GitHub / GitLab 账号锁了，重新走"忘记密码"流程很麻烦。
+**解决**：装好 Mac 第一件事就是 `cat ~/.ssh/id_ed25519 | pbcopy`，存到 1Password / 加密 U 盘。
+
+## 二十二、调试与诊断
+
+Mac 调试工具集：
+
+### 1. 活动监视器
+
+GUI 应用，看 CPU / 内存 / 磁盘 / 网络。`/Applications/Utilities/Activity Monitor.app`
+
+### 2. Console.app
+
+系统日志：`/Applications/Utilities/Console.app`，按时间过滤应用日志。
+
+### 3. 终端命令
+
+```bash
+# 看 CPU 占用
+top -o cpu
+# 持续 5 秒采样
+top -o cpu -s 5
+
+# 看内存压力
+memory_pressure
+
+# 看磁盘使用
+df -h
+du -sh ~/Library/* | sort -h
+
+# 看网络连接
+netstat -an | grep ESTABLISHED
+lsof -iTCP -sTCP:ESTABLISHED
+
+# 看系统启动时间
+uptime
+who -b
+
+# 看系统日志
+log show --predicate 'eventMessage CONTAINS "error"' --last 1h
+```
+
+### 4. 第三方工具
+
+```bash
+# 进程监控
+brew install htop
+
+# 网络分析
+brew install --cask wireshark
+
+# 系统信息
+brew install neofetch
+
+# 磁盘分析（看哪占空间）
+brew install --cask omnidisksweeper
+```
+
+## 二十三、macOS 快捷键大全
+
+**系统级**：
+- `Cmd+Q` 退出应用
+- `Cmd+W` 关闭窗口
+- `Cmd+M` 最小化
+- `Cmd+H` 隐藏
+- `Cmd+Tab` 切换应用
+- `Cmd+`` 同应用多窗口切换
+- `Cmd+Shift+3` 全屏截图
+- `Cmd+Shift+4` 区域截图
+- `Cmd+Shift+5` 截图工具
+- `Ctrl+上箭头` Mission Control
+- `Cmd+Space` Spotlight（如果没改）
+
+**文本编辑**：
+- `Cmd+←/→` 行首/行尾
+- `Option+←/→` 词首/词尾
+- `Cmd+Shift+K` 注释/取消注释（VSCode）
+
+**终端**：
+- `Ctrl+A/E` 命令行首/行尾
+- `Ctrl+U/K` 删除到行首/行尾
+- `Ctrl+R` 反向搜索历史
+- `Ctrl+L` 清屏
+- `Cmd+K` 清屏（部分终端）
+- `Cmd+D` 垂直分屏（iTerm2）
+- `Cmd+Shift+D` 水平分屏（iTerm2）
+
+## 二十四、推荐资源
+
+- [macos-defaults.com](https://macos-defaults.com) — 所有 defaults 命令大全
+- [github.com/mathiasbynens/dotfiles](https://github.com/mathiasbynens/dotfiles) — 前 Google 工程师的 dotfiles（学习范式）
+- [sspai.com](https://sspai.com) — 少数派，macOS 高质量教程
+- [github.com/agarrharr/awesome-macos](https://github.com/agarrharr/awesome-macos) — macOS 资源汇总
+- [macos.tips](https://macos.tips) — 每日小技巧
+- [reddit.com/r/macapps](https://reddit.com/r/macapps) — 应用推荐
+- [macmenu.app](https://macmenu.app) — 状态栏图标管理
+
+## 二十五、参考
 
 - [brew.sh](https://brew.sh) — Homebrew 官方
 - [github.com/ineo6/homebrew-install](https://github.com/ineo6/homebrew-install) — 国内镜像装
@@ -931,3 +1052,5 @@ brew install --cask \
 ---
 
 > **适用 macOS 版本**：13+（Apple Silicon）。Intel Mac 把 `/opt/homebrew` 换成 `/usr/local` 即可。
+
+**最后**：装机不是一次性事，**好用的配置都是慢慢调出来的**。从这 21 节的速查开始，按需添加，每次新发现好用的小工具就 `brew install` 装上、`Brewfile` 备份下来。半年后你的 Mac 就成了最顺手的开发机。
