@@ -1054,3 +1054,7 @@ brew install --cask omnidisksweeper
 > **适用 macOS 版本**：13+（Apple Silicon）。Intel Mac 把 `/opt/homebrew` 换成 `/usr/local` 即可。
 
 **最后**：装机不是一次性事，**好用的配置都是慢慢调出来的**。从这 21 节的速查开始，按需添加，每次新发现好用的小工具就 `brew install` 装上、`Brewfile` 备份下来。半年后你的 Mac 就成了最顺手的开发机。
+
+## 二十六、一句话总结
+
+**Homebrew + 镜像源 + zsh + 9 款 app + 12 个 defaults**——这五件套搞定一台新 Mac 80% 的开发机需求。剩下 20% 留给慢慢调：**先用、再优化、最后备份**，是这个装机清单的核心节奏。
