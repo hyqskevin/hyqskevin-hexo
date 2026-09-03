@@ -364,6 +364,189 @@ Trae 还在快速迭代：
 - [Codeium](https://codeium.com) — 对比工具
 - [Kimi 平台](https://platform.moonshot.cn) — 国产 LLM
 
+## 十二、多文件重构实战
+
+AI 写多文件时，**分文件让 AI 写比一次性给所有 context 强 10 倍**：
+
+```text
+# Step 1: 列接口
+请描述 [模块名] 的接口设计：
+- 需要哪些文件
+- 每个文件的职责
+- 文件之间的依赖关系
+- 数据流向
+
+# Step 2: 写类型定义（types.ts / index.ts）
+请先实现 [模块名] 的类型定义文件
+
+# Step 3: 写主逻辑（service.ts）
+请基于 types 实现 [主功能] 服务
+
+# Step 4: 写 API 路由（router.ts / controller.ts）
+请基于 service 实现 HTTP 路由
+
+# Step 5: 写测试（*.test.ts）
+请为 [主功能] 写单元测试，覆盖主要场景
+```
+
+每步之间**等 AI 完成、跑测试**，再走下一步。**不要让 AI 一次写 5 个文件**——容易引入不必要复杂度。
+
+## 十三、自定义 Skill 编写
+
+Trae v1.5+ 支持自定义 Skill（类似 Agent 的"专属能力"）。一个 Skill = 一组 prompt 模板 + 工具调用。
+
+```yaml
+# my-project/.trae/skill/code-review.yaml
+name: "项目代码审查"
+description: "按团队规范审查代码"
+prompts:
+  - name: "review-style"
+    content: |
+      请按以下规范审查代码：
+      - ESLint Airbnb 规范
+      - 函数不超过 50 行
+      - 命名用 camelCase
+      - 注释率不低于 20%
+  - name: "review-test"
+    content: |
+      请审查测试代码：
+      - 覆盖率不低于 80%
+      - 边界条件覆盖
+      - mock 用得是否合理
+tools:
+  - name: "read_file"
+  - name: "run_lint"
+```
+
+在 IDE 里 `@code-review` 就能调起。
+
+**Skill vs 普通 prompt**：
+
+| 维度 | 普通 Prompt | Skill |
+|---|---|---|
+| 复用 | 每次手输 | 一次配置 |
+| 上下文 | 单次对话 | 跨项目 |
+| 工具调用 | 无 | 可绑定工具 |
+| 团队共享 | 困难 | 文件级 |
+
+**项目级 Skill 放在** `.trae/skill/` 目录，提交 git 团队共享。
+
+## 十四、调试工作流
+
+**遇到复杂 bug**时的工作流：
+
+```text
+Step 1: 复现
+请描述这个 bug 的完整复现步骤：
+- 触发条件
+- 预期行为
+- 实际行为
+- 错误堆栈
+
+Step 2: 定位
+请基于以下信息定位问题：
+- 错误堆栈
+- 相关代码
+- 输入数据
+定位到具体行号
+
+Step 3: 分析
+请分析这个 bug 的根因：
+- 为什么会出现
+- 是设计缺陷还是实现 bug
+- 是否有其他类似问题
+
+Step 4: 修复
+请给出修复方案：
+- 最小改动版本
+- 完整重构版本
+- 测试用例
+
+Step 5: 验证
+请写测试用例验证修复：
+- 单元测试
+- 边界条件
+- 回归测试
+```
+
+每步都让 AI 输出**可粘贴的代码**或**具体命令**，不是抽象描述。
+
+## 十五、Trae + Git 工作流
+
+把 AI 和 Git 结合用：
+
+### 智能 commit
+
+```bash
+git add -A
+# 按 Cmd+I，AI 自动分析 diff 生成 commit message
+# 例：feat: add user authentication with JWT
+```
+
+### 自动 PR 描述
+
+在 GitHub PR 页面粘 diff 链接给 AI，让它生成 PR 描述：
+
+```text
+这是我的 PR diff：[链接]
+请生成 PR 描述，包括：
+- 改动概述
+- 关键决策
+- 测试覆盖
+- 截图建议
+```
+
+### Code review 自动化
+
+```text
+# .github/workflows/trae-review.yml
+name: AI Code Review
+on: pull_request
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: trae-ai/review-action@v1
+        with:
+          api-key: ${{ secrets.TRAE_API_KEY }}
+```
+
+## 十六、跨平台对比
+
+Trae vs Cursor vs Copilot 在 5 个维度的对比：
+
+| 维度 | Trae | Cursor | Copilot |
+|---|---|---|---|
+| 中文支持 | ⭐⭐⭐⭐⭐ | ⭐⭐⭐ | ⭐⭐ |
+| AI 对话 | ⭐⭐⭐⭐ | ⭐⭐⭐⭐⭐ | ⭐⭐⭐ |
+| 代码补全 | ⭐⭐⭐⭐ | ⭐⭐⭐⭐ | ⭐⭐⭐⭐⭐ |
+| 终端 AI | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐ | ⭐⭐ |
+| 团队协作 | ⭐⭐⭐ | ⭐⭐⭐⭐ | ⭐⭐⭐⭐⭐ |
+| 价格 | ¥29/月 | $20/月 | $10/月 |
+
+**经验之谈**：
+- 纯中文项目 → Trae（中文理解和飞书集成是优势）
+- 英文 + 复杂项目 → Cursor（补全 + 重构最强）
+- 已有 GitHub 生态 + 大团队 → Copilot（集成最广）
+- 预算紧 → Trae 免费版（够用）
+
+## 十七、未来 1-2 年的趋势
+
+AI 编程工具接下来会怎么发展：
+
+- **更强的多模态**：能看设计稿、读日志截图、理解架构图
+- **团队级知识**：自动学习团队代码规范、业务术语
+- **更深入的测试**：AI 自动写测试 + 自动跑测试 + 自动修测试
+- **代码审查民主化**：新手也能写出生产级代码
+- **AI Native 编程语言**：专为 AI 协作设计的语言可能涌现
+
+**给工程师的建议**：
+- 不要把 AI 当万能工具，**它是放大器**，放大你的能力或缺陷
+- 基本功（算法、设计、调试）**永远不会过时**
+- 学 1-2 个 AI 工具到精通，**比浅尝 5 个强**
+- 持续关注 AI 编程进展，但**别被 FOMO 驱动**
+
 ---
 
 > **本文基于 Trae v2.1+**（2026 年 8 月）。功能迭代快，部分细节可能过时，遇到问题以官方文档为准。
