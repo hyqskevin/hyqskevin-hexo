@@ -393,6 +393,317 @@ const urls = parseSitemap(sitemap).filter(u =>
 - [browser-use.com](https://browser-use.com) — Browser agent
 - [kimi.com](https://kimi.com) — Kimi 浏览器自动化
 
+## 十二、Firecrawl 自部署实战
+
+```bash
+# 1. 拉镜像
+docker pull firecrawl/firecrawl:latest
+
+# 2. 配置环境变量
+cat > .env <<'EOF'
+USE_DB_AUTHENTICATION=true
+FIRECRAWL_API_KEY=$(openssl rand -hex 32)
+REDIS_URL=redis://redis:6379
+PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
+EOF
+
+# 3. 启动
+docker-compose up -d
+
+# 4. 验证
+curl -X POST http://localhost:3002/v1/scrape \
+  -H "Authorization: Bearer $FIRECRAWL_API_KEY" \
+  -d '{"url": "https://example.com"}'
+```
+
+**性能调优**：
+
+```yaml
+# docker-compose.yml
+services:
+  firecrawl:
+    environment:
+      - MAX_CONCURRENT_REQUESTS=20    # 并发数
+      - CRAWL_TIMEOUT=30000           # 单页超时 30s
+      - CACHE_TTL=86400               # 缓存 24h
+    deploy:
+      resources:
+        limits:
+          memory: 4G
+```
+
+## 十三、代理池配置
+
+反爬严重的站需要代理池：
+
+```js
+// proxy-pool.js
+import { HttpsProxyAgent } from 'https-proxy-agent'
+
+class ProxyPool {
+  constructor(proxies) {
+    this.proxies = proxies
+    this.current = 0
+  }
+  
+  next() {
+    const proxy = this.proxies[this.current]
+    this.current = (this.current + 1) % this.proxies.length
+    return new HttpsProxyAgent(`http://${proxy.user}:${proxy.pass}@${proxy.host}:${proxy.port}`)
+  }
+}
+
+const pool = new ProxyPool([
+  'user1:pass1@proxy1.com:8000',
+  'user2:pass2@proxy2.com:8000',
+  // ...
+])
+
+// Crawl4AI 用法
+await crawler.arun(url='https://example.com', 
+  config={'proxy': pool.next()})
+```
+
+**免费代理**（质量差，慎用）：
+
+```bash
+# 公共代理池
+curl -s "https://api.proxyscrape.com/v2/?request=displayproxies&protocol=http&timeout=5000&country=all"
+```
+
+**付费代理推荐**：
+- Bright Data（$5/GB，企业级）
+- Oxylabs（$10/GB，稳定）
+- IPIDEA（$1/GB，便宜）
+- 自建代理（云函数 / 家庭宽带）
+
+## 十四、LLM 集成最佳实践
+
+### 14.1 内容摘要
+
+```js
+// Tavily 拿原始内容 → LLM 摘要
+const search = await tavily.search('AI 编程助手', { maxResults: 5 })
+const urls = search.results.map(r => r.url)
+const content = await tavily.extract(urls)
+
+const summary = await llm.chat({
+  messages: [{
+    role: 'system',
+    content: '请基于以下内容做摘要，每篇 200 字以内'
+  }, {
+    role: 'user',
+    content: content.results.map(r => r.content).join('\n\n---\n\n')
+  }]
+})
+```
+
+### 14.2 结构化提取
+
+```python
+from pydantic import BaseModel
+from langchain_openai import ChatOpenAI
+from langchain.document_loaders import FireCrawlLoader
+
+class ProductInfo(BaseModel):
+    name: str
+    price: float
+    description: str
+    features: list[str]
+
+# 爬取 + 结构化提取
+loader = FireCrawlLoader(url="https://product.example.com")
+docs = loader.load()
+
+llm = ChatOpenAI(model="gpt-4o").with_structured_output(ProductInfo)
+result = llm.invoke(docs[0].page_content)
+print(result)
+# ProductInfo(name='...', price=99.0, description='...', features=['...'])
+```
+
+### 14.3 多源对比
+
+```js
+// 同时问多个搜索源，融合答案
+const [exa, tavily] = await Promise.all([
+  exa.search(query, { numResults: 5 }),
+  tavily.search(query, { maxResults: 5 })
+])
+
+// 去重 + 排序
+const merged = deduplicateByUrl([...exa.results, ...tavily.results])
+// 让 LLM 综合多源答案
+const answer = await llm.chat({
+  messages: [{
+    role: 'user',
+    content: `基于以下 ${merged.length} 个来源回答：${query}\n\n${merged.map(r => r.content).join('\n\n')}`
+  }]
+})
+```
+
+## 十五、反爬对抗
+
+### 15.1 基础伪装
+
+```js
+const headers = {
+  'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+  'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+  'Accept-Language': 'en-US,en;q=0.5',
+  'Accept-Encoding': 'gzip, deflate',
+  'Connection': 'keep-alive',
+  'Upgrade-Insecure-Requests': '1'
+}
+```
+
+### 15.2 应对 Cloudflare
+
+```bash
+# 用 cloudscraper（绕过简单 CF 防护）
+pip install cloudscraper
+
+python -c "
+import cloudscraper
+scraper = cloudscraper.create_scraper()
+r = scraper.get('https://example.com')
+print(r.text)
+"
+```
+
+### 15.3 验证码处理
+
+| 服务 | 价格 | 准确率 | 速度 |
+|---|---|---|---|
+| 2Captcha | $2.99/1000 | 95% | 10-30s |
+| Anti-Captcha | $2.00/1000 | 95% | 10-20s |
+| CapSolver | $2.50/1000 | 99% | 5-10s |
+
+```js
+// 用 CapSolver 集成
+import { CapSolver } from 'capsolver-npm'
+
+const solver = new CapSolver({ apiKey: process.env.CAPSOLVER_KEY })
+const result = await solver.solveRecaptchaV2({
+  websiteURL: 'https://example.com',
+  websiteKey: '6Lc...'
+})
+```
+
+### 15.4 法律边界
+
+```text
+合法：抓公开数据、个人研究、新闻聚合（注明来源）
+灰色：抓内部数据、研究用
+违法：绕过付费墙、抓个人信息、商业转卖未授权数据
+```
+
+**遇到边界时问**：这些数据有版权吗？我会损害原网站利益吗？对方明确禁止吗？
+
+## 十六、内容清洗与结构化
+
+抓回来的 HTML / Markdown 还要清洗：
+
+```js
+// 用 cheerio 清洗
+import * as cheerio from 'cheerio'
+
+function clean(html) {
+  const $ = cheerio.load(html)
+  
+  // 删广告 / 导航 / footer
+  $('script, style, nav, footer, .ad, .sidebar').remove()
+  
+  // 提取正文
+  const article = $('article, main, .post-content').first().text()
+  
+  // 清理空白
+  return article.replace(/\s+/g, ' ').trim()
+}
+```
+
+**Markdown 提取**（用 Readability）：
+
+```js
+import { Readability } from '@mozilla/readability'
+import { JSDOM } from 'jsdom'
+
+const dom = new JSDOM(html)
+const reader = new Readability(dom.window.document)
+const article = reader.parse()
+// { title, content (HTML), textContent, ... }
+```
+
+**结构化字段提取**（用 LLM）：
+
+```js
+const fields = await llm.extract(html, {
+  schema: {
+    title: 'string',
+    author: 'string',
+    publishDate: 'date',
+    tags: 'string[]',
+    summary: 'string'
+  }
+})
+```
+
+## 十七、数据湖架构
+
+抓回来的数据怎么存？推荐分层架构：
+
+```text
+Raw（原始 HTML/MD）
+  ↓ 清洗 / 转换
+Cleaned（结构化 JSON）
+  ↓ 分块
+Chunked（向量数据库）
+  ↓ 索引
+Searchable（可搜索）
+```
+
+**实现示例**：
+
+```python
+# 1. Raw 存储（对象存储）
+raw_html = await firecrawl.scrape(url)
+s3.put_object(Bucket='raw', Key=f'{hash(url)}.html', Body=raw_html)
+
+# 2. 清洗
+cleaned = clean_html(raw_html)
+
+# 3. 分块
+chunks = text_splitter.split(cleaned, chunk_size=500)
+
+# 4. Embedding
+vectors = [embed(c) for c in chunks]
+
+# 5. 入库
+vector_store.upsert(ids=chunks_ids, vectors=vectors, metadata=chunks_meta)
+```
+
+**工具栈**：
+- 原始层：S3 / MinIO
+- 清洗层：Python + BeautifulSoup
+- 向量库：Pinecone / Weaviate / Qdrant
+- 元数据：PostgreSQL / MongoDB
+- 调度：Airflow / Prefect
+
+## 十八、未来 1-2 年的趋势
+
+AI 数据获取的方向：
+
+- **更强的多模态**：从图片 / 视频 / 音频提取信息
+- **实时性**：流式数据获取（不是定时拉）
+- **知识图谱**：从非结构化数据自动构建图
+- **数据市场**：第三方清洗数据的交易平台
+- **联邦学习**：不抓数据，只训练模型
+
+**给开发者的建议**：
+- **不要自己造轮子**——能用现成 API 就用 API
+- **重视内容质量 > 抓取速度**——脏数据比没数据更糟
+- **关注法律合规**——欧盟 GDPR / 中国个保法都很严
+- **持续优化 prompt**——AI 工具的核心是 prompt
+
 ---
 
 > **本文原则**：工具列表会过期，但分类不会。3 个月后可能多出 5 个新工具，但你仍然在 6 类里挑——这个框架长期有用。
