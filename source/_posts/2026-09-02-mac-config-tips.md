@@ -1058,3 +1058,47 @@ brew install --cask omnidisksweeper
 ## 二十六、一句话总结
 
 **Homebrew + 镜像源 + zsh + 9 款 app + 12 个 defaults**——这五件套搞定一台新 Mac 80% 的开发机需求。剩下 20% 留给慢慢调：**先用、再优化、最后备份**，是这个装机清单的核心节奏。
+
+## 二十七、推荐的 4 个 dotfiles 仓库
+
+如果你刚换 Mac 没头绪，先 clone 这 4 个 dotfiles 仓库做参考：
+
+- [mathiasbynens/dotfiles](https://github.com/mathiasbynens/dotfiles) — 前 Google 工程师的，macOS + Homebrew + Bash 范式
+- [holman/dotfiles](https://github.com/holman/dotfiles) — GitHub CEO 的极简版
+- [driesvints/dotfiles](https://github.com/driesvints/dotfiles) — Laravel 维护者的 PHP 友好版
+- [nikitavoloboev/dotfiles](https://github.com/nikitavoloboev/dotfiles) — 个人最爱，AI / ML 工具链齐全
+
+**不要直接复制**——看思路后挑适合自己工作流的 20% 留下，剩下改成本地化版本。每个人的 dotfiles 都不一样，盲目抄只会给自己挖坑。
+
+## 二十八、macOS 升级策略
+
+每年 9-10 月苹果发大版本（macOS 16、17...），**不要第一时间升级**：
+
+- **Wait 3 个月**：等 .0 → .3 修复已知 bug（特别是外接显示器 / Wi-Fi 兼容性问题）
+- **Wait 6 个月**：等 .0 → .5，确认主流 dev 工具（Docker、Homebrew、Node）兼容
+- **Wait 1 年**：等 .1 → .1，确认稳定后再升
+
+**升级前必做**：
+
+```bash
+# 1. Time Machine 完整备份
+tmutil startbackup --block
+
+# 2. Brewfile 导出
+brew bundle dump --file=~/Brewfile.backup
+
+# 3. 关键文件备份
+cp ~/.ssh/id_ed25519 ~/Desktop/ssh-backup
+cp -r ~/.gnupg ~/Desktop/gpg-backup
+
+# 4. 列出已安装 app
+ls /Applications/ > ~/Desktop/apps-backup.txt
+```
+
+**升级失败回退**：
+
+macOS 通常不能直接降级，要么：
+- 用 Time Machine 恢复到升级前的备份（全盘擦写）
+- 干净重装（要重做所有配置）
+
+**建议**：生产机永远别追大版本，等次年 .1 / .2 再说。
