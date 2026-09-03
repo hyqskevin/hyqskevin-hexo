@@ -1,7 +1,7 @@
 ---
-title: Vue3 + Nuxt + NestJS 全栈最佳实践速览
+title: Vue/Nuxt/Nest 全栈实战
 date: 2026-09-02 00:00:00
-description: Vue3 Composition API、Nuxt3 app/ 目录结构、NestJS 模块化架构、Pinia 状态管理、Prisma + MySQL、Nuxt 内置 API 路由。一篇涵盖前后端分离 / 一体化两种部署模式的关键最佳实践。
+description: Vue3 + Nuxt3 + NestJS 全栈最佳实践：组件写法、目录结构（app/）、模块化后端、Pinia Setup Store、Prisma + MySQL、Nuxt server/api/ 一体化路由。9 章节含完整代码示例。
 categories:
   - notes
 tags:
@@ -13,7 +13,7 @@ tags:
   - 全栈
 ---
 
-最近用 Vue3 + Nuxt3 + NestJS 搭了个全栈应用，整理一下用到的最佳实践。这套组合既能**前后端分离部署**（Nuxt 静态站 + NestJS API 服务），也能**一体化部署**（Nuxt 接管 server/api/，后端逻辑直接写在 Nuxt 项目里）。
+最近用 Vue3 + Nuxt3 + NestJS 搭了个全栈应用，整理一下用到的最佳实践。这套组合既能**前后端分离部署**（Nuxt 静态站 + NestJS API 服务），也能**一体化部署**（Nuxt 接管 `server/api/`，后端逻辑直接写在 Nuxt 项目里）。
 
 ## 一、为什么这套组合
 
@@ -25,7 +25,7 @@ tags:
 
 最实用场景：**用 Nuxt3 的 `server/api/` 写后端**——一套进程搞定前后端，省一台机器。NestJS 适合**独立后端服务**（多端复用、复杂业务域）。
 
-## 二、Vue3 组件写法（必读）
+## 二、Vue3 组件写法
 
 ```vue
 <script setup lang="ts">
@@ -51,11 +51,11 @@ onMounted(async () => {
 ```
 
 三个关键习惯：
-- **`<script setup>`** 永远是默认，比 Options API 简洁
+- **`<script setup>` 永远是默认**，比 Options API 简洁
 - **`ref()` 优先于 `reactive()`**：类型推断更准 + 整个对象替换更安全
 - **逻辑抽到 composables/**：复用 + 测试 + SSR 友好
 
-## 三、Nuxt3 目录结构（推荐）
+## 三、Nuxt3 目录结构
 
 ```
 nuxt-app/
@@ -76,7 +76,7 @@ nuxt-app/
 
 **Nuxt 3 默认用 `app/` 目录**（Nuxt 2 是根目录），这是 v2 → v3 升级最常踩的坑。
 
-## 四、NestJS 模块化架构（独立后端场景）
+## 四、NestJS 模块化架构
 
 ```
 src/
@@ -96,6 +96,10 @@ src/
 
 ```typescript
 // user.controller.ts
+import { Controller, Get, Post, Body } from '@nestjs/common'
+import { UserService } from './user.service'
+import { CreateUserDto } from './user.dto'
+
 @Controller('users')
 export class UserController {
   constructor(private readonly userService: UserService) {}
@@ -110,7 +114,7 @@ export class UserController {
 
 NestJS 的核心理念：**控制器只接 HTTP，服务只管业务，DTO 管类型**。三者解耦后单测好写。
 
-## 五、状态管理：Pinia（推荐 Setup 风格）
+## 五、状态管理：Pinia
 
 ```typescript
 // stores/user.ts
@@ -121,8 +125,11 @@ export const useUserStore = defineStore('user', () => {
   const currentUser = ref<User | null>(null)
   const isLoggedIn = computed(() => !!currentUser.value)
 
-  async function login(credentials) {
-    const r = await fetch('/api/login', { method: 'POST', body: JSON.stringify(credentials) })
+  async function login(credentials: { email: string; password: string }) {
+    const r = await fetch('/api/login', {
+      method: 'POST',
+      body: JSON.stringify(credentials)
+    })
     currentUser.value = await r.json()
   }
   function logout() { currentUser.value = null }
@@ -153,7 +160,7 @@ model User {
 
 Prisma 优势：**类型安全从 schema 一路传到前端**（`@prisma/client` 生成 TS 类型 + Nuxt 自动转发 API 类型）。
 
-## 七、Nuxt 内置 API 路由（一套进程方案）
+## 七、Nuxt 内置 API 路由
 
 ```typescript
 // server/api/users.get.ts
@@ -197,3 +204,11 @@ const { data: users, error, pending } = await useFetch<User[]>('/api/users')
 | 一周内要上线 MVP | Nuxt 一体化 |
 
 判断标准：**如果你发现 Nuxt 的 server/api/ 文件夹开始超过 50 个**——该拆 NestJS 了。
+
+## 十、参考
+
+- [vuejs.org](https://vuejs.org) — Vue 3 官方
+- [nuxt.com](https://nuxt.com) — Nuxt 3 官方
+- [docs.nestjs.com](https://docs.nestjs.com) — NestJS 官方
+- [pinia.vuejs.org](https://pinia.vuejs.org) — Pinia 官方
+- [prisma.io](https://www.prisma.io) — Prisma 官方
