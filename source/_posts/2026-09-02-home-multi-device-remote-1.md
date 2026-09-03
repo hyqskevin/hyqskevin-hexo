@@ -230,6 +230,90 @@ tailscale set --exit-node=mac-home
 
 这样在外网时所有流量从家里的 Mac 出去，**绕过公司网络限制 + 保护隐私**。
 
+### 5.4 Subnet Router（访问整个家庭内网）
+
+如果家里有 NAS、智能家居、打印机等 Tailscale 装不了的设备，可以让一台设备当 subnet router：
+
+```bash
+# 在 mac-home 上
+tailscale up --advertise-routes=192.168.31.0/24
+
+# 其他设备就能访问 192.168.31.x 整个家庭内网
+ssh 192.168.31.1  # 路由器后台
+```
+
+### 5.5 Funnel（公网暴露服务）
+
+```bash
+# 把本地服务（web / ssh）通过 Tailscale 公开
+tailscale funnel 80 on
+# 自动分配 https://mac-home.tail1234.ts.net/ 域名
+```
+
+不暴露 NAS web UI 给朋友，**Funnel + ACL** 限定 IP 段。
+
+## 六、5 个常见错误排查
+
+### 6.1 SSH 连接超时
+
+```bash
+# 1. 验证 Tailscale 状态
+tailscale status
+ping 100.x.x.x
+
+# 2. 验证 SSH 服务
+sudo lsof -iTCP:22 -sTCP:LISTEN
+# macOS 系统设置 → 共享 → 远程登录开
+
+# 3. 检查防火墙
+sudo /usr/libexec/ApplicationFirewall/socketfilterfw --getglobalstate
+```
+
+### 6.2 Permission denied (publickey)
+
+```bash
+# 检查公私钥配对
+ssh -v mac-home
+# 看到 "Offering public key" 和 "Authentications that can continue" 信息
+
+# 确认服务端 authorized_keys 有你的公钥
+ssh mac-home "cat ~/.ssh/authorized_keys"
+# 复制 mac 控制端的公钥进去
+```
+
+### 6.3 Tailscale 显示 offline
+
+```bash
+# 重启服务
+sudo tailscale down && sudo tailscale up
+
+# 看日志
+sudo tailscale log
+# 常见：NAT 类型问题（symmetric NAT 打洞失败）→ 自动走 DERP 中继
+```
+
+### 6.4 连接慢（>500ms）
+
+```bash
+# 看是直连还是 DERP
+tailscale status
+# "direct" 表示直连；"relay" 表示中继
+
+# 走 DERP 时延迟高 → 检查两端 NAT 类型
+tailscale netcheck
+# UDP: true 表示可打洞；UDP: false 走中继
+```
+
+### 6.5 SSH 频繁断连
+
+```bash
+# 客户端配置保活（防止 NAT 老化断流）
+# ~/.ssh/config
+Host *
+    ServerAliveInterval 60
+    ServerAliveCountMax 3
+```
+
 ---
 
 ## 下期预告
