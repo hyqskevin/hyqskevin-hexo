@@ -898,3 +898,134 @@ audit=true
 - **Node.js 升级后** npm 也会自动升级，跨大版本后建议删 lock 重装
 - **多 `.npmrc` 嵌套** 项目里用 `npm config get registry` 看实际生效的是哪一份
 - **lock 文件大**（>5MB）通常是 monorepo 或装太多包，正常
+
+## 二十一、`npm install` 4 个阶段解析
+
+知道这 4 阶段能帮你定位 install 卡在哪：
+
+```text
+1. idealTree:building    # 解析依赖树，下载 package.json
+2. reify:create          # 创建 node_modules 目录
+3. reify:resolve         # 解析所有包的实际版本
+4. reify:extract         # 解压包到 node_modules
+```
+
+**常见卡点**：
+- 卡在 `idealTree: sill idealTree buildDeps` → 网络/registry 问题
+- 卡在 `reify:extract` → 磁盘慢（SSD vs HDD 差 10 倍）
+- 卡在 `reify:resolve` → peer deps 冲突，开 `legacy-peer-deps`
+
+**加速技巧**：
+
+```bash
+# 用 npm ci 代替 npm install（CI 必用）
+npm ci --prefer-offline --no-audit --no-fund
+
+# 看具体哪一步慢
+npm install --timing  # 输出每步耗时
+```
+
+## 二十二、完整项目 .npmrc 实战示例
+
+一个中型 Node.js + TypeScript 项目的完整 .npmrc：
+
+```ini
+# ===== registry =====
+registry=https://registry.npmmirror.com/
+
+# ===== 镜像 scope =====
+@my-company:registry=https://npm.internal.company.com/
+@types:registry=https://registry.npmmirror.com/
+
+# ===== 版本控制 =====
+save-exact=true
+engine-strict=true
+package-lock=true
+
+# ===== 安装优化 =====
+prefer-offline=true
+cache=~/.npm-cache
+
+# ===== 行为 =====
+audit=high
+fund=false
+loglevel=warn
+
+# ===== CI 特殊 =====
+# 在 CI 环境变量里加 NPM_CONFIG_FUND=false
+# 关闭打赏提示加速
+```
+
+**对应的 GitHub Actions**：
+
+```yaml
+- uses: actions/setup-node@v4
+  with:
+    node-version-file: '.nvmrc'
+    cache: 'npm'
+
+- run: npm ci
+  env:
+    NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+    NPM_CONFIG_AUDIT: 'true'
+```
+
+**`engines` 字段**（`package.json`）：
+
+```json
+{
+  "engines": {
+    "node": ">=20.0.0",
+    "npm": ">=10.0.0"
+  }
+}
+```
+
+**`volta` 字段**（自动切换 Node 版本）：
+
+```json
+{
+  "volta": {
+    "node": "20.10.0",
+    "npm": "10.2.3"
+  }
+}
+```
+
+这套组合拳让团队开发体验**统一且稳定**：
+- `.nvmrc` 或 `volta` 决定 Node 版本
+- `engines` 校验
+- `.npmrc` 决定 npm 行为
+- `package-lock.json` 锁依赖
+- CI 用 `npm ci` 严格按 lock 装
+
+## 二十三、版本演进历史
+
+了解 `.npmrc` 演变能理解为什么有些配置看起来多余：
+
+- **npm 5 之前**：没有 `.npmrc.lock` 概念，所有依赖范围都允许
+- **npm 7（2021）**：引入 strict peer deps，破坏了大量老项目
+- **npm 7+**：引入 `overrides` 字段（`package.json` 里），可以强制覆盖子依赖版本
+- **npm 9（2022）**：默认开启 `audit`，引入 `overrides` 文档
+- **npm 10（2023）**：改进 lockfile 性能，引入 `install-strategy=hoisted/nested/shallow`
+
+**`overrides` 示例**（`package.json` 里强制覆盖子依赖）：
+
+```json
+{
+  "overrides": {
+    "lodash": "4.17.21",
+    "axios": {
+      "follow-redirects": "1.15.0"
+    }
+  }
+}
+```
+
+当某个传递依赖有安全漏洞，但顶层包没更新时，用 `overrides` 强制升级。
+
+**`overrides` vs `.npmrc` 的 `legacy-peer-deps`**：
+- `overrides`：精确控制子依赖版本（推荐）
+- `legacy-peer-deps`：跳过 peer 检查（粗放）
+
+新项目用 `overrides` 解决依赖冲突，老项目临时用 `legacy-peer-deps` 续命。
