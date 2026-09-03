@@ -264,7 +264,50 @@ ssh 你的Windows用户名@121.43.122.77 -p 6001
 
 > ⚠️ SMB 不建议长期暴露公网（即使是改了端口）。长期用建议走 Tailscale 或其他 VPN。
 
-## 八、维护建议
+## 八、frp 工作原理详解（5 步流程）
+
+理解 frp 怎么跑的，对排查问题至关重要：
+
+```text
+1. 启动 → mac-mini frpc 连 ECS frps:7000
+2. 注册 → frpc 告诉 frps：「mac-mini-vnc = 我本地 127.0.0.1:5900，请用公网 :5900 收流量」
+3. 心跳 → frpc 每 10s 报一次心跳（heartbeatInterval），告知自己还活着
+4. 断联检测 → frps 30s 没收到心跳就清掉这个代理（heartbeatTimeout）
+5. 流量转发 → 用户连 ECS:5900 → frps 找到对应 frpc → 通过 7000 通道把数据塞给 frpc → frpc 转到本地 5900（VNC）
+```
+
+**关键**：第 5 步走的是**同一条 7000 控制连接**（多路复用），不是新开 5900 连接。所以 frps 的 5900 是"客户端看到的入口"，**实际数据还是跑在 7000 这条长连接上**。
+
+**frps / frpc 角色对比**：
+
+| 角色 | 全称 | 跑在哪 | 主要职责 |
+|---|---|---|---|
+| frps | frp **server** | 阿里云 ECS（公网 IP） | 监听控制端口 + 代理端口；等 frpc 主动连接；按规则做流量转发 |
+| frpc | frp **client** | 内网机器（mac-mini） | 主动连出到 frps；声明本地哪个端口暴露成公网哪个端口；维护心跳 |
+
+## 九、5 条安全建议
+
+frp 默认是**明文传输**——VNC 流量在公网上是裸的。生产环境务必加层：
+
+1. **frp 启用 TLS**（v0.50+ 支持）：`frps.toml` 加 `transport.tls.force = true`，流量加密
+2. **frp 启用身份认证**：`token = your-strong-password` 在 frps 配置，frpc 必须带相同 token 才能连
+3. **VNC 改 SSH + X11 转发**：VNC 协议不安全，远程桌面用 RDP（Windows）/SSH+X11（Linux/Mac）更稳
+4. **服务器安全组最小化**：只放行 7000（控制）+ 5900/3389（具体代理端口），不开无关端口
+5. **启用 fail2ban**：frps 配 iptables 规则，连续失败 5 次封 IP 一小时
+
+```toml
+# frps.toml 加 token 认证
+auth.method = "token"
+auth.token = "your-strong-random-password-here"
+```
+
+```toml
+# frpc.toml 同步
+auth.method = "token"
+auth.token = "your-strong-random-password-here"
+```
+
+## 十、维护建议
 
 1. **定期看日志**：`tail -f ~/frpc.log`，断联第一时间发现
 2. **Stash 升级后重检**：新版本可能自动开 TUN 模式，要重新关
