@@ -415,14 +415,518 @@ trusted-host = mirrors.aliyun.com
 
 **Intel Mac 迁移到 Apple Silicon**：不用全装 Homebrew，原 `/usr/local` 的内容不能用，要在 `/opt/homebrew` 重新装。备份 `brew list` 输出，新机重装。
 
-## 十二、参考
+## 十三、zsh 进阶配置
 
-- [brew.sh](https://brew.sh) — 官方
+`.zshrc` 不只是装 oh-my-zsh。**有 5 个细节能让你终端体验从"能用"变"顺手"**。
+
+### 1. PATH 顺序
+
+```bash
+# .zshrc 顶部
+export PATH="/opt/homebrew/bin:/usr/local/bin:$HOME/.local/bin:$PATH"
+# Homebrew 在最前，local bin 次之
+```
+
+### 2. 自定义函数
+
+```bash
+# 在 ~/.zshrc 加
+
+# 快速建项目目录并 cd 进去
+mkcd() { mkdir -p "$1" && cd "$1"; }
+
+# 提取任何压缩包
+extract() {
+  if [ -f $1 ]; then
+    case $1 in
+      *.tar.bz2) tar xjf $1 ;;
+      *.tar.gz)  tar xzf $1 ;;
+      *.bz2)     bunzip2 $1 ;;
+      *.rar)     unrar e $1 ;;
+      *.gz)      gunzip $1 ;;
+      *.tar)     tar xf $1 ;;
+      *.tbz2)    tar xjf $1 ;;
+      *.tgz)     tar xzf $1 ;;
+      *.zip)     unzip $1 ;;
+      *.Z)       uncompress $1 ;;
+      *.7z)      7z x $1 ;;
+      *)         echo "'$1' 无法解压" ;;
+    esac
+  else
+    echo "'$1' 不是有效文件"
+  fi
+}
+
+# 快速查端口占用
+port() {
+  lsof -i :$1
+}
+
+# 查本机 IP
+myip() {
+  ifconfig | grep "inet " | grep -v 127.0.0.1 | awk '{print $2}'
+}
+```
+
+### 3. 智能历史搜索
+
+```bash
+# 在 ~/.zshrc 加
+HISTFILE=~/.zsh_history
+HISTSIZE=10000
+SAVEHIST=10000
+setopt SHARE_HISTORY      # 多终端共享历史
+setopt HIST_IGNORE_DUPS   # 跳过重复
+setopt HIST_FIND_NO_DUPS  # 搜索时跳过重复
+```
+
+`Ctrl+R` 反向搜索历史命令，按 `Ctrl+R` 多次继续往前找。
+
+### 4. 智能补全
+
+```bash
+autoload -Uz compinit && compinit
+# 模糊匹配
+zstyle ':completion:*' matcher-list 'm:{a-zA-Z}={a-zA-Z}'
+# 目录补全带颜色
+zstyle ':completion:*' list-colors "${(s.:.)LS_COLORS}"
+```
+
+### 5. 提示符美化（powerlevel10k 之外的选择）
+
+如果不想装 p10k，用 starship（跨 shell）：
+
+```bash
+brew install starship
+echo 'eval "$(starship init zsh)"' >> ~/.zshrc
+```
+
+`~/.config/starship.toml` 自定义：
+
+```toml
+[character]
+success_symbol = "[➜](bold green)"
+error_symbol = "[✗](bold red)"
+
+[node]
+version_format = "v[($semver)]($style) "
+```
+
+## 十四、Docker Desktop 替代方案
+
+Docker Desktop 商业授权争议后，社区有 3 个常用替代：
+
+| 工具 | 优势 | 安装 |
+|---|---|---|
+| **OrbStack** | 启动快、UI 优雅、免费个人用 | `brew install --cask orbstack` |
+| **Colima** | 开源、CLI 工具 | `brew install colima docker docker-compose` |
+| **Rancher Desktop** | k8s 友好 | `brew install --cask rancher` |
+
+**Colima 配置示例**（推荐 ARM Mac 用）：
+
+```bash
+# 启动
+colima start --cpu 4 --memory 8 --disk 60
+
+# 装 docker-compose
+brew install docker-compose
+
+# 验证
+docker run hello-world
+```
+
+**Docker Desktop 必装**（不在乎授权就用）：
+
+```bash
+brew install --cask docker
+# 启动后开 OrbStack 兼容模式
+```
+
+**镜像加速**（国内）：
+
+```ini
+# ~/.docker/daemon.json
+{
+  "registry-mirrors": [
+    "https://registry.docker-cn.com",
+    "https://mirror.ccs.tencentyun.com"
+  ]
+}
+```
+
+## 十五、系统性能优化
+
+新 Mac 通常性能就 OK，但可以进一步优化：
+
+### 1. 关闭多余启动项
+
+```bash
+# 查看登录时启动的应用
+osascript -e 'tell application "System Events" to get the name of every login item'
+
+# 禁用某个启动项
+osascript -e 'tell application "System Events" to delete login item "ItemName"'
+```
+
+GUI 在「系统设置 → 通用 → 登录项」。
+
+### 2. 关闭 Spotlight 索引
+
+如果用 Alfred / Raycast 代替 Spotlight 搜索：
+
+```bash
+# 关闭索引（节省 CPU）
+sudo mdutil -a -i off
+
+# 完全禁用 Spotlight
+sudo mdutil -E /
+
+# 重新启用（如果改主意）
+sudo mdutil -a -i on
+```
+
+### 3. 关掉没用的动画
+
+```bash
+# 加快窗口动画
+defaults write NSGlobalDomain NSWindowResizeTime -float 0.001
+
+# 关掉 Mission Control 动画
+defaults write com.apple.dock expose-animation-duration -float 0
+
+# 关掉 Launchpad 动画
+defaults write com.apple.dock springboard-show-duration -float 0
+defaults write com.apple.dock springboard-hide-duration -float 0
+defaults write com.apple.dock springboard-page-duration -float 0
+```
+
+### 4. 关闭 Crash Reporter
+
+```bash
+defaults write com.apple.CrashReporter DialogType none
+```
+
+**注意**：关掉后系统崩溃不再弹窗，但日志还在 `/Library/Logs/DiagnosticReports/`。
+
+### 5. 减少 Time Machine 备份频率
+
+```bash
+# 默认每小时备份，改成每天
+sudo defaults write /System/Library/LaunchDaemons/com.apple.backupd-auto Interval -int 86400
+```
+
+**注意**：这是 system-level default，谨慎改。
+
+### 6. 内存压力监控
+
+```bash
+# 看内存压力
+memory_pressure
+# 输出 System-wide memory free percentage: XX%
+
+# 看进程内存占用
+top -o mem
+```
+
+**活动监视器** GUI 也行：Dock 右键 → 选项 → 活动监视器。
+
+### 7. 清理系统缓存
+
+```bash
+# 系统缓存（需 sudo）
+sudo rm -rf /Library/Caches/*
+
+# 用户缓存
+rm -rf ~/Library/Caches/*
+
+# Xcode 派生数据（开发机才需要）
+rm -rf ~/Library/Developer/Xcode/DerivedData/*
+```
+
+**MacCleaner Pro** 等第三方工具能可视化清理，**但大多数"清理工具"是骗钱的**——手动 rm 就行。
+
+## 十六、备份与恢复策略
+
+新 Mac 配好之后一定要做备份，否则下次换机要重来：
+
+### 1. Time Machine（系统级）
+
+```bash
+# 启用 Time Machine 备份到外接硬盘
+sudo tmutil enable
+sudo tmutil startbackup --auto
+```
+
+推荐用 Time Machine 自动备份整个系统。
+
+### 2. 配置文件 dotfiles 备份
+
+`.zshrc`、`.npmrc`、SSH keys、`.gitconfig` 这些应该进 git 仓库：
+
+```bash
+# 推荐用 chezmoi 或 yadm 管理 dotfiles
+brew install yadm
+yadm init
+yadm add ~/.zshrc ~/.gitconfig ~/.npmrc
+yadm commit -m "Initial dotfiles"
+yadm remote add origin https://github.com/your/dotfiles.git
+yadm push
+```
+
+新机恢复：
+
+```bash
+yadm clone https://github.com/your/dotfiles.git
+```
+
+### 3. Homebrew 备份
+
+```bash
+# 导出当前所有安装的包
+brew bundle dump --file=~/Brewfile
+git add ~/Brewfile
+git commit -m "Update Brewfile"
+
+# 新机恢复
+brew install --cask --app-store
+brew bundle install --file=~/Brewfile
+```
+
+`Brewfile` 是声明式清单，比手动重装可靠。
+
+### 4. SSH key 备份（**重要！**）
+
+```bash
+# SSH key 丢了 GitHub 账号就锁了，必须备份
+# 加密存到 1Password / Bitwarden / 加密 U 盘
+```
+
+## 十七、装机后的微调
+
+### 触控板手势（增加效率）
+
+| 手势 | 动作 |
+|---|---|
+| 三指上滑 | Mission Control |
+| 三指下滑 | App Exposé |
+| 三指左右滑 | 切换全屏应用 |
+| 四指捏合 | Launchpad |
+| 四指张开 | 显示桌面 |
+| 双指点按（轻按） | 智能缩放 |
+| 双指从边缘滑入 | 通知中心 |
+
+GUI 在「系统设置 → 触控板」全部可配。
+
+### Spotlight 替代
+
+如果禁用了 Spotlight，用 Alfred 替代：
+
+```bash
+brew install --cask alfred
+```
+
+设置 Workflows：
+- 全局快捷键 `Cmd+Space` 触发
+- 搜索 Everything（默认）
+- 计算器（输入 `=2+2` 直接出结果）
+- 系统命令（输入 `shutdown` 直接关机）
+- 剪贴板历史（默认集成）
+
+### 文件预览增强
+
+```bash
+# Quick Look 增强（预览各种文件）
+brew install --cask qlmarkdown  # 预览 Markdown
+brew install --cask qlimagesize  # 预览图片带尺寸
+```
+
+### 终端复用（tmux）
+
+`tmux` 是 SSH 远程工作必备，本地也很有用：
+
+```bash
+brew install tmux
+
+# 配置文件 ~/.tmux.conf
+cat > ~/.tmux.conf <<'EOF'
+# 鼠标支持
+set -g mouse on
+
+# 前缀键改 Ctrl-a（emacs 风）
+unbind C-b
+set -g prefix C-a
+bind C-a send-prefix
+
+# 切分窗格
+bind | split-window -h
+bind - split-window -v
+
+# 重新加载配置
+bind r source-file ~/.tmux.conf \; display "reloaded!"
+EOF
+
+# 启动
+tmux
+```
+
+常用命令：
+- `Ctrl-a "` 横切分
+- `Ctrl-a %` 竖切分
+- `Ctrl-a d` detach（后台）
+- `tmux a` 重新 attach
+
+## 十八、远程办公配置
+
+新 Mac 拿来远程办公要配的几件事：
+
+### 1. Tailscale（组网）
+
+```bash
+brew install --cask tailscale
+# 启动后用 Google / Microsoft 账号登录
+# 自动获得 100.x.x.x 虚拟 IP，可以访问家里 / 公司网络
+```
+
+### 2. SSH 服务器
+
+```bash
+# macOS 自带 sshd，只需开启
+sudo systemsetup -setremotelogin on
+
+# 验证
+sudo systemsetup -getremotelogin
+# Remote Login: On
+
+# 防火墙允许
+sudo /usr/libexec/ApplicationFirewall/socketfilterfw --add /usr/sbin/sshd
+```
+
+### 3. 屏幕共享（VNC）
+
+```bash
+# 系统设置 → 通用 → 共享 → 屏幕共享
+# 或命令行
+sudo launchctl load -w /System/Library/LaunchDaemons/com.apple.screensharing.plist
+```
+
+### 4. Mos（鼠标平滑）
+
+远程办公用 Mos 解决 macOS 鼠标加速问题：
+
+```bash
+brew install --cask mos
+# 设置：滚动方向反转、滚轮平滑、指针加速曲线
+```
+
+## 十九、macOS 软件下载加速
+
+App Store / Xcode 下载慢的话换 DNS：
+
+```bash
+# 临时换 DNS
+sudo networksetup -setdnsservers Wi-Fi 223.5.5.5 119.29.29.29
+
+# 阿里 DNS（推荐）
+# 223.5.5.5 / 223.6.6.6
+# 腾讯 DNS
+# 119.29.29.29 / 119.28.28.28
+# Cloudflare
+# 1.1.1.1 / 1.0.0.1
+```
+
+恢复默认：
+
+```bash
+sudo networksetup -setdnsservers Wi-Fi empty
+```
+
+**Xcode 下载加速**：
+
+```bash
+# 用 aria2c 多线程下载
+brew install aria2
+
+# 或用 xcodes（专门管理 Xcode 版本的工具）
+brew install xcodes
+xcodes install 16.0  # 自动从苹果 CDN 加速下载
+```
+
+## 二十、给不同角色推荐的装机清单
+
+### 给前端开发
+
+```bash
+brew install --cask \
+  visual-studio-code \
+  google-chrome \
+  firefox \
+  charles \
+  postman \
+  figma \
+  iterm2
+
+brew install \
+  node \
+  pnpm \
+  yarn
+```
+
+### 给后端开发
+
+```bash
+brew install --cask \
+  visual-studio-code \
+  iterm2 \
+  orbstack \
+  postman \
+  tableplus \
+  redis-insight
+
+brew install \
+  go \
+  python \
+  rust \
+  postgresql@15 \
+  redis \
+  mysql
+```
+
+### 给数据科学
+
+```bash
+brew install --cask \
+  visual-studio-code \
+  jupyter-notebook \
+  visual-studio-code  # VSCode Jupyter 插件
+
+brew install \
+  python \
+  miniforge
+# 然后 conda install pandas numpy scikit-learn matplotlib jupyter
+```
+
+### 给设计师
+
+```bash
+brew install --cask \
+  figma \
+  sketch \
+  zeplin \
+  adobe-creative-cloud \
+  cleanmymac \
+  istat-menus
+```
+
+## 二十一、参考
+
+- [brew.sh](https://brew.sh) — Homebrew 官方
 - [github.com/ineo6/homebrew-install](https://github.com/ineo6/homebrew-install) — 国内镜像装
 - [sspai.com/post/27662](https://sspai.com/post/27662) — 通知中心定制
 - [sspai.com/post/40169](https://sspai.com/post/40169) — 更多 defaults 隐藏选项
 - [github.com/ohmyzsh/ohmyzsh](https://github.com/ohmyzsh/ohmyzsh) — zsh 配置框架
 - [github.com/romkatv/powerlevel10k](https://github.com/romkatv/powerlevel10k) — 主题
+- [github.com/twpayne/chezmoi](https://github.com/twpayne/chezmoi) — dotfiles 管理
+- [macos-defaults.com](https://macos-defaults.com) — 所有 defaults 命令大全
 
 ---
 
