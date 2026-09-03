@@ -787,3 +787,114 @@ npm install lodash --save --workspace @my-company/api
 ---
 
 **总结**：`.npmrc` 配置 90% 的项目只需 5 项（registry / save-exact / engine-strict / audit / cache），剩下的按需加。CI 上多开 `audit=true`，本地多开 `prefer-offline`，团队统一 `.npmrc` 提交 git。
+
+## 十八、4 个补充场景配置
+
+### 场景 1：lock 文件冲突解决
+
+```bash
+# 团队里 lock 冲突了，强制统一
+rm package-lock.json
+npm install
+git add package-lock.json
+git commit -m "chore: regenerate lock"
+```
+
+预防：合并 PR 时先 `npm ci` 一遍，确认 lock 一致再合。
+
+### 场景 2：私有 npm 包发布
+
+自己组织内发布 `@my-company/utils` 类的私有包：
+
+```ini
+# .npmrc（项目级）
+registry=https://registry.npmjs.org/
+@my-company:registry=https://npm.pkg.github.com/
+//npm.pkg.github.com/:_authToken=${GITHUB_TOKEN}
+```
+
+发布命令：
+
+```bash
+npm login --registry=https://npm.pkg.github.com/ --scope=@my-company
+npm publish
+```
+
+### 场景 3：Docker 多阶段构建
+
+```dockerfile
+# 阶段 1：装依赖
+FROM node:20-alpine AS deps
+WORKDIR /app
+COPY package*.json .npmrc ./
+RUN npm ci --ignore-scripts
+
+# 阶段 2：构建
+FROM node:20-alpine AS build
+WORKDIR /app
+COPY --from=deps /app/node_modules ./node_modules
+COPY . .
+RUN npm run build
+
+# 阶段 3：生产镜像
+FROM node:20-alpine
+WORKDIR /app
+COPY --from=build /app/dist ./dist
+COPY --from=deps /app/node_modules ./node_modules
+COPY package*.json ./
+USER node
+CMD ["node", "dist/index.js"]
+```
+
+**注意**：构建阶段和运行阶段都装 `.npmrc`（含 token 用 build-arg 注入），但最终镜像用 multi-stage 把 .npmrc 留在 deps 阶段不复制到 final。
+
+### 场景 4：GitHub Packages + 公共 npm 混用
+
+```ini
+# 默认公共 registry
+registry=https://registry.npmjs.org/
+
+# 自己的 scope 走 GitHub Packages
+@my-org:registry=https://npm.pkg.github.com/
+
+# 必要认证
+//npm.pkg.github.com/:_authToken=${GITHUB_TOKEN}
+```
+
+安装时自动从对应 registry 拉取：
+
+```bash
+npm install @my-org/utils  # 走 GitHub Packages
+npm install lodash          # 走 npm 公共
+```
+
+## 十九、给新手的 5 个起步配置
+
+完全没设过 `.npmrc`？从这 5 项开始：
+
+```ini
+# 1. 国内镜像（速度）
+registry=https://registry.npmmirror.com/
+
+# 2. 锁版本（团队一致）
+save-exact=true
+
+# 3. 严格 Node 版本（防环境差异）
+engine-strict=true
+
+# 4. 包锁文件必提交
+package-lock=true
+
+# 5. CI 友好
+audit=true
+```
+
+贴到项目根 `.npmrc`，提交 git，团队所有人 `npm ci` 一次就同步了。**别从 .gitignore 排除 .npmrc**。
+
+## 二十、最后的小贴士
+
+- **复制别人项目的 .npmrc 时**，先把 `registry` 改成自己团队的（特别是私有 registry）
+- **加了 .npmrc 但效果不对**，先 `npm config get <key>` 查实际生效值（合并后）
+- **Node.js 升级后** npm 也会自动升级，跨大版本后建议删 lock 重装
+- **多 `.npmrc` 嵌套** 项目里用 `npm config get registry` 看实际生效的是哪一份
+- **lock 文件大**（>5MB）通常是 monorepo 或装太多包，正常
