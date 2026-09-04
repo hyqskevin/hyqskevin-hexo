@@ -24,10 +24,29 @@
 
 ## 写新文章
 
-1. 用 `npx hexo new post "<title>"` 创建草稿，落到 `source/_posts/<当前年>/`
-2. front-matter 标准字段（参考 `scaffolds/post.md`）：`title`、`date`、`tags`、`categories`
-3. 写完本地预览：`npm run server`（默认 `http://localhost:4000`）
-4. 提交后由 CI 自动部署；不要本地手动 `hexo deploy`
+1. **先建年份子目录**（踩坑：hexo new post 不会自动建 `<年>/` 子目录）
+   ```bash
+   mkdir -p source/_posts/2026
+   ```
+2. 创建草稿（**两种等价路径**任选）：
+   - **Hexo 命令**：`npx hexo new post "<title>"` → 落到 `source/_posts/<title>.md`（根目录！）→ `git mv source/_posts/<title>.md source/_posts/2026/<slug>.md`
+   - **直接 Write**（推荐，新文更顺手）：`Write source/_posts/2026/<slug>.md` 一次成型
+3. front-matter 标准字段（参考 `scaffolds/post.md`）：`title`、`date`、`description`、`categories`、`tags`
+   - `description` **必须填**（60–120 字中文摘要），覆盖首页自动摘要
+   - 系列文加 `series.name/index/total` 字段（即使主题不渲染，结构化元数据先存）
+4. 写完本地预览：`npm run server`（默认 `http://localhost:4000`）
+5. 跑 `npm run build` 验证生成无 error（**必须**，不要直接 push）
+6. 提交后由 CI 自动部署；不要本地手动 `hexo deploy`
+
+### Obsidian 源稿改写流程（主工作流，2026-09 新增）
+
+主路径是 Obsidian vault 写 → 改写 → 落地 Hexo，不走 `hexo new post`：
+
+- **源稿位置**：`~/Library/Mobile Documents/iCloud~md~obsidian/Documents/Documents/4-doc/...`
+- **改写 Skill**：`skill/obsidian-to-hexo-publisher.md`（结构 / front matter / 图片 / 链接 / callout / 双链转换）
+- **去 AI 味**：`skill/humanizer.md`
+- **发布清单**：`~/Library/Mobile Documents/iCloud~md~obsidian/Documents/Documents/8-hexo/发布文章协作清单.md`（按选题 / 状态 / 推荐下一篇）
+- **字数规则**（2026-09-04 已放宽）：接受原长度发布，目标甜区 3000–4000 字。源稿 300 字 cheatsheet 就发 300 字，不要"反复 Edit 补 1000"凑数。> 4000 字按 Skill §4.5.1 拆分决策树判断
 
 ## 样式调整
 
