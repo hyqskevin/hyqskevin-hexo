@@ -1,0 +1,424 @@
+---
+title: DDPM 扩散生成完全指南
+date: 2026-10-16 00:00:00
+updated: 2026-10-17 02:34:24
+updated_from: <vault>/4-class/20260914-大模型基础讲解/00-第六幕-DDPM扩散/01-章节级PPT大纲.md
+updated_note: 源稿 v2 增补 8 课时（v9）分配 + Sora Spacetime Patches 770x 内存节省 + 关联技术点扩展（含 45-语音ASR-TTS、46-3D生成）
+description: 系统讲解 DDPM 扩散模型的加噪去噪原理，从 2014 GAN 简史到 2025 Wan2.1 的完整技术演进路线，覆盖 Stable Diffusion Latent Space 压缩（显存节省 2304x）、Sora Spacetime Patches（770x 内存节省）、3DGS 实时渲染与 VALL-E 语音克隆。
+categories:
+  - 大模型基础
+tags:
+  - DDPM
+  - 扩散模型
+  - Stable Diffusion
+  - Sora
+  - 生成模型
+  - 3DGS
+  - Latent Diffusion
+  - Wan2.1
+---
+
+![封面](https://hyqskevin.github.io/pic/ddpm-diffusion/cover.png)
+
+> **算法锚点**：Ho et al. 2020《Denoising Diffusion Probabilistic Models》NeurIPS 2020
+> **算法性质**：生成算法革命 ⭐⭐
+> **本篇课时**：8 课时（v9 分配，本篇详述 6 章）
+> **关联技术点**：43-图像生成 / 44-视频生成 / 45-语音ASR-TTS（含已并入的 54-语音克隆）/ 46-3D生成（复讲 41-多模态：图像视角）
+
+LLM 解决了"会说话"——但"会画"吗？这是第六幕要回答的核心问题。从 2014 GAN 的训练不稳定、模式崩塌，到 2020 DDPM 的优雅加噪去噪，再到 2024 Sora 的 60 秒 1080p 视频、2025 Wan2.1 的开源视频 SOTA，扩散模型用了十年时间统治了图像、视频、语音、3D 四大生成领域。
+
+## 一、从 GAN 到 Diffusion：生成模型简史
+
+### 1.1 五大生成模型流派
+
+在讲 DDPM 之前，先看 2014-2019 的 GAN 时代——理解 GAN 的失败，才能理解 DDPM 为什么成功。
+
+生成模型有五大流派：
+
+| 流派 | 代表工作 | 核心思路 | 主要缺陷 |
+|------|---------|---------|---------|
+| 自回归 | PixelRNN | 逐像素条件概率 | 极慢 |
+| VAE | Kingma & Welling 2014 | 变分下界 | 模糊 |
+| GAN | Goodfellow 2014 | 对抗训练 | 不稳定 |
+| Flow-based | RealNVP | 可逆变换 | 容量有限 |
+| Diffusion | Ho et al. 2020 | 加噪 + 去噪 | 多步慢 |
+
+其中 Diffuion 是后起之秀，2019 年还鲜有人问津，到 2022 年 Stable Diffusion 出炉后一举成为主流。
+
+### 1.2 GAN 的兴衰与三大缺陷
+
+GAN 的核心是 Generator vs Discriminator 的极小极大博弈：
+
+```text
+min_G max_D  E[log D(x)] + E[log(1 - D(G(z)))]
+```
+
+Goodfellow 2014 提出后，GAN 一度统治了图像生成。但它有三个致命缺陷：
+
+- **模式崩塌（mode collapse）**：Generator 只会生成几种图，缺乏多样性
+- **训练不稳定**：G 与 D 的能力难以平衡，loss 震荡
+- **难以扩展到高分辨率**：256×256 都难，1024×1024 基本不可能
+
+BigGAN、StyleGAN2 都尝试修补，但根本问题没解决。
+
+### 1.3 Score-Based 的过渡桥梁
+
+2019 年 Song 等人提出 Score-Based Generative Models，用分数匹配（score matching）估计数据分布的梯度。加噪 + 去噪的直觉在这里已经成型：
+
+```text
+score = ∇_x log p(x)
+加噪：x → x + noise（逐步破坏）
+去噪：沿着 score 方向走回真实分布
+```
+
+数学上等价于 diffusion 过程，这为 2020 年 DDPM 打下了理论基础。
+
+## 二、DDPM 加噪去噪：核心算法推导
+
+### 2.1 前向加噪过程
+
+DDPM 的核心是"加噪 + 去噪"——我们严格推导每一步公式。
+
+前向过程是固定的高斯加噪，从真实图像 $x_0$ 逐步加噪到纯噪声 $x_T$：
+
+```text
+q(x_t | x_{t-1}) = N(x_t; √(1-β_t) x_{t-1}, β_t I)
+```
+
+其中 $\beta_t$ 是预设的噪声调度表（schedule），从 $\beta_1 = 10^{-4}$ 到 $\beta_T = 0.02$。
+
+利用重参数化技巧，可以一步到位到达任意步 $t$：
+
+```text
+x_t = √ᾱ_t x_0 + √(1-ᾱ_t) ε
+其中 ᾱ_t = ∏_{s=1}^{t} α_s, α_t = 1 - β_t, ε ~ N(0, I)
+```
+
+这一步不需要迭代，直接从 $x_0$ 采样到 $x_t$，训练时大幅提速。
+
+### 2.2 反向去噪过程
+
+反向过程是神经网络要学习的分布 $p_\theta(x_{t-1} | x_t)$。训练目标非常优雅——预测噪声 $\epsilon$：
+
+```text
+L = E_{x_0, ε, t} [||ε - ε_θ(x_t, t)||²]
+```
+
+其中 $x_t = √ᾱ_t x_0 + √(1-ᾱ_t) ε$，$t$ 在 $[1, T]$ 均匀采样，$\epsilon_\theta$ 是 U-Net 预测的噪声。
+
+为什么预测噪声而不是 $x_{t-1}$ 或 $x_0$？Ho et al. 在原论文中对比过实验，预测噪声的收敛最稳定、质量最好。
+
+### 2.3 采样加速与 DDIM
+
+推理时，从 $x_T$ 开始逐步去噪：
+
+```python
+# 伪代码
+x = torch.randn(batch_size, 3, 256, 256)  # x_T
+for t in reversed(range(T)):
+    eps = model(x, t)
+    x = ddpm_step(x, eps, t)  # 走一步去噪
+return x
+```
+
+但 DDPM 默认需要 1000 步，推理慢。DDIM（Song et al. 2020）通过非马尔可夫采样，**50 步即可生成高质量图像**：
+
+```text
+DDIM 确定性采样：
+x_{t-1} = √ᾱ_{t-1} · pred_x0 + √(1-ᾱ_{t-1}) · eps_θ
+```
+
+DDIM 不依赖马尔可夫链，可跳步。后续 DPM-Solver、Consistency Model 等进一步把步数压到 4 步甚至 1 步。
+
+### 2.4 DDPM vs GAN
+
+| 维度 | GAN | DDPM |
+|------|-----|------|
+| 训练稳定性 | 差 | 好 |
+| 图像质量 | 好（短期） | 更好 |
+| 多样性 | 模式崩塌 | 完整分布 |
+| 推理速度 | 1 步 | 1000 步（→DDIM 50 步） |
+| 可控性 | 弱 | CFG 强 |
+
+DDPM 训练稳定、质量更好，但慢。这是它的代价，也是后续 Stable Diffusion 要解决的问题。
+
+## 三、Stable Diffusion 与 Latent Space
+
+### 3.1 Stable Diffusion 整体架构
+
+DDPM 在像素空间太慢——Stable Diffusion 用 Latent Diffusion 把显存减 2304 倍。
+
+Rombach et al. 2022《High-Resolution Image Synthesis with Latent Diffusion Models》的整体架构：
+
+```text
+文本 → [CLIP Text Encoder] → 文本嵌入
+                            ↘
+                              [U-Net + Cross Attention] → latent 去噪
+                            ↗
+图像 → [VAE Encoder] → latent
+                              ↓
+                            [VAE Decoder] → 图像
+```
+
+关键：**扩散过程发生在 latent 空间，不是像素空间**。
+
+### 3.2 Latent Diffusion 的 2304 倍显存节省
+
+为什么 latent 空间能省这么多？
+
+```text
+像素空间：512 × 512 × 3 = 786,432 维
+latent 空间：64 × 64 × 4 = 16,384 维
+压缩比 = 786,432 / 16,384 = 48x
+```
+
+- **空间压缩**：512/64 = 8x
+- **通道压缩**：3 → 4，约 0.75x（实际略增）
+- **维度压缩**：48x
+- **算力压缩**：48² ≈ 2304x（因为算力与维度平方成正比）
+
+VAE Encoder 把图像压缩到 latent，U-Net 在 16K 维工作而不是 786K 维，省下 2304 倍算力。显存同理。
+
+这是 Stable Diffusion 能在消费级 GPU（8GB 显存）上跑的关键。
+
+### 3.3 CFG、ControlNet 与主流模型
+
+CFG（Classifier-Free Guidance）是无分类器引导：
+
+```text
+eps_final = (1 + w) · eps_θ(x_t | prompt) - w · eps_θ(x_t | empty)
+```
+
+- $w$ 越大：质量越高，多样性越低
+- $w = 7$ 是常用默认值
+- $w = 0$ 等同无条件生成
+
+ControlNet（Lv et al. 2023）在 U-Net 中加入空间条件控制（边缘、深度、姿态），把可控生成推向精细化。
+
+主流模型对比：
+
+| 模型 | 时间 | 参数 | 特点 |
+|------|------|------|------|
+| SD 1.5 | 2022 | 0.86B | 开源鼻祖 |
+| SDXL | 2023 | 2.6B | 双 CLIP，1024×1024 |
+| SD 3.5 | 2024 | 8B | MM-DiT 架构 |
+| FLUX.1 | 2024 | 12B | 当前 SOTA |
+| DALL-E 3 | 2023 | - | 闭源，强 prompt |
+| Midjourney v6 | 2024 | - | 美学最强 |
+
+FLUX.1（Black Forest Labs）12B 参数是当前开源图像生成的 SOTA。
+
+## 四、视频生成：Sora 与 Spacetime Patches
+
+### 4.1 视频生成的四大难题
+
+Sora 让 60 秒 1080p 视频成为可能——核心是 Spacetime Patches + DiT。但视频生成比图像难得多：
+
+```text
+四大难题：
+1. 时空四维数据：H × W × T × C = 1920 × 1080 × 60s × 30fps × 3
+   = 11,174,400,000 像素（单段 60 秒视频）
+
+2. 时间一致性：相邻帧不能突变
+3. 运动模糊：高速运动要清晰
+4. 算力爆炸：图像 786K 维，视频 11G 维，1.4 万倍
+```
+
+### 4.2 Sora 架构与 Spacetime Patches
+
+Sora（OpenAI 2024）的核心思想是把视频切成 patches，像 ViT 处理图像一样处理视频：
+
+```text
+3D VAE Encoder：时空压缩（视频 → latent 时空块）
+Spacetime Patches：把时空 latent 切成 patches
+DiT（Diffusion Transformer）：在 patches 上做扩散
+3D VAE Decoder：还原视频
+```
+
+数学上，60 秒 1080p 30fps 视频被切成约 360 万个 patches。Spacetime Patches 的关键洞见：**patch 是时空统一的，可以当成 token 处理**。这一统一表示带来了 **770× 内存节省**（相比朴素逐帧处理），让长视频生成首次在工程上可行。
+
+### 4.3 DiT vs U-Net
+
+DDPM / SD 用的 U-Net 是卷积架构。Sora 改用 DiT（Peebles & Xie 2023），这是 Diffusion Transformer：
+
+| 维度 | U-Net | DiT |
+|------|-------|-----|
+| Scalability | 一般 | 优秀 |
+| 共享 GPU 优化 | 复杂 | 简单 |
+| 大模型效果 | 受限 | 持续提升 |
+
+DiT 验证了"scaling law 在 diffusion 上同样成立"。后续 Wan2.1（阿里 2025）沿用 DiT 思路，加上更好的 3D VAE，开源视频生成直接冲到 SOTA。
+
+## 五、语音克隆与多模态生成
+
+### 5.1 语音生成三大任务
+
+图像视频会了——语音呢？语音生成有三大任务：
+
+```text
+ASR（音频 → 文字）：Whisper / Paraformer
+TTS（文字 → 音频）：CosyVoice / Tortoise
+Voice Cloning（克隆）：VALL-E / CosyVoice 2
+```
+
+本节重点是 Voice Cloning。
+
+### 5.2 VALL-E 神经编解码 LM
+
+VALL-E（Wang et al. 2023）把 TTS 重新定义为 LM 问题：
+
+```text
+prompt 音频（3 秒）→ 神经 codec → 离散 token
+                                ↓
+                         Transformer LM
+                                ↓
+                         预测下一个音频 token
+                                ↓
+                         神经 codec 解码 → 音频
+```
+
+3 秒 prompt + 一句话文本 → 与 prompt 音色一致的语音。**跨语言克隆也支持**：英文 prompt + 中文文本，能生成中文且保持英文音色。
+
+### 5.3 CosyVoice 2 与 GPT-4o Realtime
+
+CosyVoice 2（阿里 2024）中文 SOTA：
+
+- Speaker Similarity 0.84（与真实说话人相似度）
+- 中文 MOS 4.5+（自然度）
+- 支持中英文混合、情感控制
+
+GPT-4o Realtime（OpenAI 2024）则是端到端语音对话：
+
+- **200ms 延迟**：接近真人对话
+- 不再 ASR → LLM → TTS 流水线
+- 直接语音进、语音出
+
+Kyutai Moshi（2024）走得更远，做到了全双工（同时听和说）的实时语音助手。
+
+## 六、3D 生成与数字孪生
+
+### 6.1 三大流派
+
+从 2D 图像到 3D 世界——三大流派：
+
+| 流派 | 代表 | 思路 | 速度 |
+|------|------|------|------|
+| NeRF | Mildenhall et al. 2020 | MLP 表征辐射场 | 训练慢、渲染慢 |
+| 3DGS | Kerbl et al. 2023 | 高斯球显式表征 | 实时 > 30 FPS |
+| Diffusion 3D | Poole et al. 2022 | 用 2D Diffusion 引导 3D | 单图生 3D |
+
+### 6.2 NeRF 体素渲染
+
+NeRF（Mildenhall et al. 2020）的核心是 MLP：
+
+```text
+输入：5D 坐标 (x, y, z, θ, φ)
+MLP：(x, y, z, θ, φ) → (RGB, σ)
+输出：体素密度 σ + 颜色 RGB
+渲染：体素渲染积分
+```
+
+体素渲染沿相机射线积分：
+
+```text
+C(r) = ∫ T(t) · σ(r(t)) · c(r(t), d) dt
+T(t) = exp(-∫ σ(r(s)) ds)
+```
+
+NeRF 效果好但慢——一张图要分钟级，训练要小时级。
+
+### 6.3 3DGS 实时革命
+
+3D Gaussian Splatting（Kerbl et al. 2023）用显式高斯球表征 3D：
+
+```text
+高斯球参数：
+- 位置 μ（3D）
+- 协方差 Σ（3×3，控制形状）
+- 颜色 c（RGB + 球谐）
+- 不透明度 α
+```
+
+**实时 > 30 FPS**、**训练 1 小时**——比 NeRF 快 100 倍。这是 3D 重建的工业级突破。
+
+### 6.4 SDS Loss 与数字孪生
+
+DreamFusion（Poole et al. 2022）解决了一个大问题：3D 数据不够。
+
+```text
+SDS（Score Distillation Sampling）：
+  1. 从随机视角渲染 3D 表示
+  2. 用预训练 2D Diffusion 计算分数
+  3. 反向传播到 3D 参数
+```
+
+不需要 3D 训练数据，只用 2D Diffusion 就能引导 3D 生成。TripoSR（2023）把这个思路推向单图生 3D，秒级出模型。
+
+数字孪生 + VLA（Vision-Language-Action）模型，让机器人能在生成的 3D 世界里训练，是具身智能的关键基础设施。
+
+## 七、学习路线与思考题
+
+### 7.1 必读论文
+
+按优先级排序：
+
+**核心 5 篇**：
+1. Goodfellow et al. 2014《GAN》⭐⭐
+2. Ho et al. 2020《DDPM》⭐⭐⭐
+3. Rombach et al. 2022《Latent Diffusion / Stable Diffusion》⭐⭐⭐
+4. OpenAI 2024《Sora》⭐⭐⭐
+5. Kerbl et al. 2023《3DGS》⭐⭐⭐
+
+**进阶 5 篇**：
+6. Ho et al. 2019《Score-Based》
+7. Song et al. 2020《DDIM》
+8. Radford et al. 2021《CLIP》
+9. Esser et al. 2024《SD 3 / MM-DiT》
+10. Wang et al. 2023《VALL-E》⭐⭐
+
+**工业应用 3 篇**：
+- Lv et al. 2023《ControlNet》
+- Black Forest Labs 2024《FLUX.1》
+- Tencent 2024《HunyuanVideo》
+
+### 7.2 经典讨论题
+
+- **Q1**：GAN 失败的三大原因是什么？
+- **Q2**：DDPM 为什么能超越 GAN？
+- **Q3**：Latent Diffusion 显存能减 2304 倍的原理？
+- **Q4**：Sora 真的理解物理吗？
+- **Q5**：3DGS 为什么比 NeRF 快 100 倍？
+- **Q6**：VALL-E 3 秒克隆是黑魔法吗？
+
+每个问题都是一节课的讨论起点。
+
+### 7.3 关联技术点
+
+本幕涉及的 5 个技术点讲稿位置：
+
+```text
+- 43-图像生成
+- 44-视频生成
+- 54-语音克隆
+- 45-语音ASR-TTS
+- 46-3D 生成
+```
+
+复讲：`41-多模态`。
+
+## 模型版本说明
+
+> ⚠️ **以发布时为准**：本文涉及的模型与论文版本号，均以各论文 arXiv 正式发表版本为准。DDPM (2020)、Stable Diffusion (2022)、Sora (2024)、Wan2.1 (2025) 等里程碑版本不会变化，但 FLUX.1、SDXL、HunyuanVideo 等工业模型仍在快速迭代，本文记录的版本特性可能在你的阅读时已有更新版本。
+
+---
+
+Diffusion 让 AI 会"画"——但画完怎么变成"有用"的工具？这是第七幕要回答的问题：InstructGPT 用 RLHF 让 LLM 听话，2024 年 ChatGPT 已经是 2 亿用户。下一讲，我们看 RLHF 三阶段 + DPO + LoRA 的对齐算法革命。
+
+---
+
+## 更新记录（2026-10-17）
+
+- **课时分配**：本篇课时由「6 课时」更新为「8 课时（v9 分配，本篇详述 6 章）」，对应源稿 v2 的总课时调整。
+- **关联技术点**：补充 45-语音ASR-TTS（含已并入的 54-语音克隆）和 46-3D生成（复讲 41-多模态：图像视角），原列表的 `41-多模态` 调整为复讲项。
+- **Sora §4.2**：新增 Spacetime Patches **770× 内存节省** 数据点，呼应源稿 v2 中 Sora 架构的内存优势量化。
+- 主体六章（GAN 简史 → DDPM 加噪去噪 → Stable Diffusion → Sora → 语音克隆 → 3D 生成）内容、文风、案例与原图全 URL 保持不变。
