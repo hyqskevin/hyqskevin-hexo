@@ -1,0 +1,161 @@
+---
+title: 18 个设计 Skill 推荐
+date: 2026-10-08 00:00:00
+description: 精选 18 个设计与前端 AI Skill 与开源工具，覆盖 UI 组件库、设计系统、图标库、Figma 集成与 SKILL.md 范式实践，附 Top 5 概览 + 9 条精讲 + 9 条紧凑清单。
+categories: [工具推荐]
+tags: [AI, 设计, Skill, UI, 前端, Figma, 设计系统]
+---
+
+设计类 Skill 是 AI 编程 agent 落地最稳的一类：成果肉眼可见、迭代成本低、回报周期短。本文整理 18 个值得放进工具箱的设计资源，从 UI 组件库到 Figma 转代码，从 DESIGN.md 规范到 AI 出图 prompt 库，按 stars 与子领域双排序，挑出 Top 5 概览 + 9 条精讲 + 9 条紧凑清单。
+
+## 一、Top 5 概览（按 stars 降序）
+
+| # | 仓库 | stars | 一句话核心 |
+|---|------|-------|------------|
+| 1 | [nextlevelbuilder/ui-ux-pro-max-skill](https://github.com/nextlevelbuilder/ui-ux-pro-max-skill) | 133,722 | AI 设计 intelligence，覆盖多平台 UI/UX 构建 |
+| 2 | [VoltAgent/awesome-design-md](https://github.com/VoltAgent/awesome-design-md) | 119,877 | 主流品牌的 DESIGN.md 合集 |
+| 3 | [ant-design/ant-design](https://github.com/ant-design/ant-design) | 99,700 | 企业级 UI 设计语言 + React UI 库 |
+| 4 | [mui/material-ui](https://github.com/mui/material-ui) | 99,141 | Google Material Design React 组件库 |
+| 5 | [bradtraversy/design-resources-for-developers](https://github.com/bradtraversy/design-resources-for-developers) | 67,099 | 开发者向设计资源精选清单 |
+
+接下来按子领域展开：UI 组件库 → 设计系统与 token → 图表 / 图标 → Figma 集成。
+
+## 二、UI 组件库
+
+### 2.1 ant-design（99,700 ⭐）
+
+仓库：<https://github.com/ant-design/ant-design>
+
+国内最知名的企业级 React UI 库，从 2017 年迭代至今已覆盖 5 个大版本，提供 Button、Table、Form、Modal 等 70+ 高质量组件，对中后台系统尤其友好。
+
+**为什么推荐**：TypeScript 完备度业内第一，文档中英文双语，国内大厂背书（阿里、字节、腾讯内部项目普遍采用），遇到问题搜中文基本能找到答案。组件密度与一致性平衡极佳，不需要额外封装即可满足 B 端复杂业务。
+
+**适用场景**：中后台、运营后台、数据看板、ToB 工作台；不适合追求极致视觉差异化的 C 端场景（视觉风格偏标准化）。
+
+**与同类差异**：相比 MUI 走 Google Material Design 视觉路线，Ant Design 更偏「中性企业感」，主题色系统更容易二次改造；相比 Chakra UI 走 emotion/styled 路线，Ant Design 的 CSS-in-JS 方案与 Tailwind 类 utility-first 范式不冲突。
+
+### 2.2 mui/material-ui（99,141 ⭐）
+
+仓库：<https://github.com/mui/material-ui>
+
+Google Material Design 规范的 React 组件库，免费版本长期维护，提供 Material Design 3 完整支持，包含 Material You 动态色、圆润形状、可访问性 ARIA 标签全套。
+
+**为什么推荐**：Material Design 视觉语言全球辨识度高，对应海外用户审美天然友好；可访问性（a11y）做得非常扎实；v5/v6 后 API 设计简洁，`sx` prop + theme 系统让定制成本降到最低。
+
+**适用场景**：面向海外用户的产品、需要 Material Design 视觉风格的 Web 应用、追求 WCAG 合规的项目。
+
+**与同类差异**：相比 Chakra UI，MUI 视觉风格更「Material」；相比 Ant Design，MUI 更轻量、主题更易二次定制，但国内社区相对较弱。
+
+### 2.3 saadeghi/daisyui（42,554 ⭐）
+
+仓库：<https://github.com/saadeghi/daisyui>
+
+最受欢迎的免费开源 Tailwind CSS 组件库，提供 class 名形式的语义化组件（如 `btn`、`card`、`navbar`），无 JS 依赖。
+
+**为什么推荐**：不引入额外运行时，只在 Tailwind 之上做语义类扩展，bundle 体积几乎为零；主题切换靠 CSS 变量，一行 class 切换深浅模式；社区主题生态丰富，daisyUI themes 仓库额外收录 30+ 配色。
+
+**适用场景**：用 Tailwind 做快速原型、追求极致首屏体积的个人项目、静态站点（Next.js SSG、Hexo、Astro）。
+
+**与同类差异**：相比 Flowbite 同类定位，daisyUI 更轻、语义类更稳定；相比 MUI/Ant Design 是「不绑定框架」的选择，不挑 React/Vue/Svelte，纯 CSS 即可。
+
+## 三、设计系统与 Token
+
+### 3.1 nextlevelbuilder/ui-ux-pro-max-skill（133,722 ⭐）
+
+仓库：<https://github.com/nextlevelbuilder/ui-ux-pro-max-skill>
+
+全场 stars 最高的「设计 intelligence」skill，让 AI 编程 agent（Claude Code、Cursor、Codex）具备专业的设计判断力，输出不再是「AI 模板味」而是真正可用的 UI/UX。
+
+**为什么推荐**：133k+ stars 是设计类 skill 的天花板；解决了 AI 编程最大痛点——生成页面像「AI 模板」而不够专业；多平台覆盖（Web / iOS / Android / 桌面），token 系统与排版规则一应俱全。
+
+**适用场景**：用 AI 编程 agent 写产品页面、对生成结果视觉要求高、需要在多个项目保持一致设计语言。
+
+**与同类差异**：相比 VoltAgent/awesome-design-md 偏「范式沉淀」，ui-ux-pro-max-skill 偏「直接可用」——前者是参考书，后者是工作台。
+
+### 3.2 VoltAgent/awesome-design-md（119,877 ⭐）
+
+仓库：<https://github.com/VoltAgent/awesome-design-md>
+
+把 Stripe、Linear、Vercel、GitHub 等 30+ 主流品牌的 DESIGN.md 汇总到一起，分析它们的共同模式，让你「站在巨人肩膀上」做设计系统。
+
+**为什么推荐**：把分散在各家博客、招聘页、style guide 的「品牌设计语言」提取到结构化 markdown，可直接喂给 AI 当上下文；是 skill 时代的「设计系统 cheat sheet」。
+
+**适用场景**：从零搭建设计系统、需要快速对齐团队视觉语言、给 AI 提供高质量设计上下文。
+
+**与同类差异**：相比单个 DESIGN.md 仓库（如 Linear 自己只放自己的），这个仓库是「多家合集」；适合不想被某一品牌绑定的项目。
+
+## 四、图表与图标
+
+### 4.1 cathrynlavery/diagram-design（44,394 ⭐）
+
+仓库：<https://github.com/cathrynlavery/diagram-design>
+
+「Editorial diagram」风格 skill：42 种图类型（架构图、时序图、关系图、流程图等），生成结果不用 Mermaid、没有「AI 模板味」、无阴影、无过度装饰，自包含 HTML+SVG。
+
+**为什么推荐**：是 AI 编程 agent 输出「干净专业图表」的最优解；解决了 Mermaid 渲染单调、Graphviz 太丑的痛点；自包含 HTML 可以直接嵌入任何静态站点（Hexo、Hugo、Jekyll）。
+
+**适用场景**：技术博客配图、技术文档内部插图、给客户/老板的方案 PPT 配图。
+
+**与同类差异**：相比 Mermaid 靠 DSL 自动渲染，diagram-design 是 prompt-driven 生成；相比 draw.io / Excalidraw 手动画图，diagram-design 完全交给 AI，但仍保留可编辑性。
+
+### 4.2 lucide-icons/lucide（24,887 ⭐）
+
+仓库：<https://github.com/lucide-icons/lucide>
+
+开源图标库的代表作品，由 Feather Icons 演化而来，提供 1,500+ 一致性极强、统一线宽（默认 1.5px / 2px 可选）的 SVG 图标，覆盖 React、Vue、Svelte、原生 SVG。
+
+**为什么推荐**：图标风格极简统一，几乎能 hold 住任何现代产品调性；包体积小、按需 tree-shaking；命名规范（`Home`、`Settings`、`User`），IDE 智能补全友好。
+
+**适用场景**：Web 应用、移动应用图标、文档插图、博客装饰图标。
+
+**与同类差异**：相比 Heroicons（仅 Tailwind 生态）、Material Icons（视觉太 Material），Lucide 是「跨框架 + 中性风」的最佳折中；相比 Tabler Icons 同类定位，Lucide 默认线宽更细，更适合密集 UI。
+
+## 五、Figma × AI 编程
+
+### 5.1 GLips/Figma-Context-MCP（15,962 ⭐）
+
+仓库：<https://github.com/GLips/Figma-Context-MCP>
+
+Figma 官方推荐之外的「事实 MCP 之王」：把 Figma 文件的布局信息（节点树、约束、样式 token）以 MCP 协议喂给 Cursor、Claude Code、Codex 等 AI 编程 agent，让 agent 能「看见」Figma 设计稿。
+
+**为什么推荐**：解决 Figma → AI 编程「最后一步」——以前 agent 只能拿到截图，现在能拿到结构化布局；16k stars 是同类中最高；支持实时同步（不是一次性导出）。
+
+**适用场景**：Figma 设计稿 → 生产代码、AI 编程 agent 接管前端迭代、设计系统一致性维护。
+
+**与同类差异**：相比官方 Figma MCP server，社区版在「节点粒度」「自定义 token 过滤」上更灵活；缺点是非官方，可能在 Figma 改版时滞后。
+
+### 5.2 openai/skills · figma-implement-design
+
+仓库：<https://github.com/openai/skills/blob/main/skills/.curated/figma-implement-design/SKILL.md>
+
+OpenAI 官方 skill 仓库下的 figma-implement-design：把 Figma 设计稿转成 1:1 像素级一致的生产代码，强调 Figma MCP + design tokens 双向一致性。
+
+**为什么推荐**：OpenAI 官方背书 + 持续维护；production-grade 设计，对「像素级一致」要求高的项目是首选；和 OpenAI 旗下 Codex / ChatGPT 工作流深度集成。
+
+**适用场景**：设计稿还原度要求极高的项目、已经有 Figma 设计系统的团队、需要 design tokens 双向同步的场景。
+
+**与同类差异**：相比 GLips/Figma-Context-MCP 是「通用桥」，figma-implement-design 是「开箱即用方案」——前者给你数据，后者直接给你代码。
+
+## 六、其余条目（紧凑清单）
+
+剩下 9 条按 stars 降序简列，覆盖 Figma 插件、官方 MCP、设计资源导航、AI 出图与 Skill 工程实践等长尾场景：
+
+- **bradtraversy/design-resources-for-developers**（67,099 ⭐）— 开发者向设计资源精选清单，覆盖 stock photos、CSS frameworks、UI libraries、icons、colors、typography 等 10+ 类别，新人入门设计资源最快的导航。
+- **goabstract/Awesome-Design-Tools**（41,415 ⭐）— Abstract 出品的「设计工具 + 插件」清单，按用途分类（UI 设计、原型、动效、协作、图标、字体等），覆盖比 design-resources-for-developers 更专精。
+- **jeremylongshore/claude-code-plugins-plus-skills · figma-pack**（2,500 ⭐）— 30 个 Figma 主题 skill 一键安装，覆盖 Composable + Manifest 全套，Claude Code 友好。
+- **bergside/design-md-figma**（153 ⭐）— Figma 插件，从当前文件提取 style 生成 DESIGN.md + SKILL.md，对接 Claude Code / Codex / Cursor，保持设计系统一致性。
+- **figma/mcp-server-guide · figma-use + figma-generate-design** — Figma 官方 MCP skill 双件套：`figma-use`（Plugin API 调用规则）+ `figma-generate-design`（从代码生成/更新 Figma 屏幕），官方背书但偏 API 文档向。
+- **YouMind-OpenLab/ai-image-prompts-skill** — 10,000+ 精选 AI 出图 prompt 库，覆盖 Midjourney / DALL-E / Flux / Stable Diffusion 等主流模型，GitHub Action 每日自动更新，可直接喂给 agent 当 prompt 上下文。
+- **Medium — AI for Designers: How to Create a SKILL.md File** — 设计师视角深度文：论证 SKILL.md 是「一次编写永久复用」的设计规范文件，把 prompt 时代升级到 skill 时代，含 DESIGN.md 实战框架。
+- **AI 做页面总翻车？26 万星前端 skill 排行（frontend-design / graphify）** — 国内一线前端博客对当下热门 frontend-design / graphify 类 skill 的横评，附 `/plugin marketplace add` 安装命令，对国内用户更友好。
+- **xAgent 内置 Skill 文件结构与社区共建约定** — Skill 安全 + 结构 SOP（references / templates / examples / scripts / assets 五件套），新人写第一个 SKILL.md 时最值得参考的工程规范。
+
+## 七、选择建议
+
+- 想「直接可用」→ 选 **ui-ux-pro-max-skill** + **daisyui** + **lucide**
+- 想「搭建设计系统」→ 选 **awesome-design-md** + **Ant Design / MUI**
+- 想「Figma → 代码」→ 选 **GLips/Figma-Context-MCP** + **openai/skills · figma-implement-design**
+- 想「图表 / 配图」→ 选 **cathrynlavery/diagram-design** + **YouMind-OpenLab/ai-image-prompts-skill**
+- 想「设计资源导航」→ 选 **bradtraversy/design-resources-for-developers** + **Awesome-Design-Tools**
+
+设计类 Skill 是 AI agent 落地最容易出彩的领域——因为设计本身「可见、可量化、可迭代」。把这 18 个 Skill 装进工作流，下次让 AI 写页面就不只是「能动」，而是「好看」。
