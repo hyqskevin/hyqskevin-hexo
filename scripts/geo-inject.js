@@ -74,6 +74,14 @@ function buildGraph(page, siteConfig) {
   }
   // 去掉可能的尾斜杠不一致问题（保留目录式）
   canonical = canonical.replace(/([^:])\/{2,}/g, '$1/');
+  // ⚠️ 统一去掉末尾的 index.html
+  //   source/about/index.md 的 permalink 是 /about/index.html，
+  //   直接用会让 canonical 指向 /about/index.html 而不是 /about/ ——
+  //   AI 爬虫会把这两个 URL 当成两个不同的页面，权重被分散。
+  //   目录式的 URL（/about/）才是该页面的规范地址。
+  canonical = canonical.replace(/\/index\.html?$/i, '/');
+  // 根路径特殊情况：/index.html → /
+  if (canonical === SITE_URL + '/index.html') canonical = SITE_URL + '/';
 
   const graph = [
     {
