@@ -62,11 +62,19 @@ function readConfig() {
     const txt = fs.readFileSync(CONFIG, 'utf8');
     const m = txt.match(/^url:\s*(\S+)/m);
     const p = txt.match(/^permalink:\s*(\S+)/m);
+    const tz = txt.match(/^timezone:\s*(\S+)/m);
     return {
       url: m ? m[1].replace(/\/$/, '') : 'https://hyqskevin.github.io',
-      permalink: p ? p[1] : ':year/:month/:day/:title/'
+      permalink: p ? p[1] : ':year/:month/:day/:title/',
+      timezone: tz ? tz[1].replace(/^['"]|['"]$/g, '') : 'Asia/Shanghai'
     };
-  } catch { return { url: 'https://hyqskevin.github.io', permalink: ':year/:month/:day/:title/' }; }
+  } catch {
+    return {
+      url: 'https://hyqskevin.github.io',
+      permalink: ':year/:month/:day/:title/',
+      timezone: 'Asia/Shanghai'
+    };
+  }
 }
 
 // 清理
@@ -96,6 +104,55 @@ const { url, permalink } = readConfig();
 //   .url-structure-record.json    —— 子目录上移的映射
 // 两者共同决定旧路径。
 
+// ─────────────────────────────────────────────────────────────
+// ⚠️ 时区陷阱（实测踩过，必须复现 CI 环境的 Hexo 计算）
+// ─────────────────────────────────────────────────────────────
+// permalink 里的 :year/:month/:day 不是 front-matter 的 date 原值，
+// 而是 Hexo 经过 adjustDateForTimezone 之后的本地日期。
+//
+// Hexo 的算法（hexo/dist/plugins/processor/common.js）：
+//   const offset = date.getTimezoneOffset();   // ← 取决于构建环境时区
+//   const target = moment.tz.zone(timezone).utcOffset(ms);
+//   const diff = (offset - target) * 60000;
+//   return new Date(ms - diff);
+//
+// 而 getTimezoneOffset() 是环境相关的，同一份代码两种结果：
+//   本地 (Asia/Shanghai, UTC+8) → date: 2026-10-18 → permalink /2026/10/18/
+//   CI   (ubuntu-latest, UTC)   → date: 2026-10-18 → permalink /2026/10/17/
+//
+// 线上是 CI 构建的（GitHub Actions ubuntu-latest = UTC），
+// 所以旧 URL 用的是 UTC 下的结果。
+// 本地生成重定向页时若直接用 front-matter 日期会差一天 ——
+// 重定向落到 /2026/10/18/2026/xxx/，而旧链接在 /2026/10/17/2026/xxx/，
+// 结果重定向完全失效（实测踩过）。
+//
+// → 这里强制按 UTC 语义计算（offset = 0），与 CI 保持一致。
+//    注意：这不是「修正时区 bug」，而是「让本地重定向页对齐线上产物」。
+//    如果你把 CI 改成显式设置 TZ=Asia/Shanghai，那本地就应该用本地时区算。
+const moment = require('moment-timezone');
+
+function hexoPermalinkDate(dateStr, timezone, useUtc) {
+  // 与 Hexo 的 toDate 一致：无时区信息按本地时间解析
+  const d = new Date(dateStr);
+  // 模拟目标环境的 getTimezoneOffset()
+  const offset = useUtc ? 0 : d.getTimezoneOffset();
+  const ms = d.getTime();
+  const target = moment.tz.zone(timezone).utcOffset(ms);
+  const diff = (offset - target) * 60000;
+  const adj = new Date(ms - diff);
+  return {
+    y: adj.getUTCFullYear(),
+    mo: String(adj.getUTCMonth() + 1).padStart(2, '0'),
+    d: String(adj.getUTCDate()).padStart(2, '0')
+  };
+}
+
+// 默认按 UTC 算（对齐 GitHub Actions ubuntu-latest）
+// 若 CI 里显式设了 TZ，可加环境变量 GEO_TZ_MODE=local 切回本地语义
+const USE_UTC = process.env.GEO_TZ_MODE !== 'local';
+
+const SITE_TZ = (readConfig().timezone || 'Asia/Shanghai');
+
 const MAP1 = path.join(__dirname, '.permalink-rename-record.json');
 const MAP2 = path.join(__dirname, '.url-structure-record.json');
 let pages = [];
@@ -117,9 +174,9 @@ if (fs.existsSync(MAP1) && fs.existsSync(MAP2)) {
     const oldRel = movedTo.get(newBase);
     if (!oldRel) continue;                 // 不在本次移动范围内，跳过
 
-    const y = r.y || r.date.slice(0, 4);
-    const mo = r.mo || r.date.slice(5, 7);
-    const d = r.d || r.date.slice(8, 10);
+    // ⚠️ 用 Hexo 的算法（含时区）算 permalink 日期，而不是直接用 date 字段
+    const pd = hexoPermalinkDate(`${r.y || r.date.slice(0, 4)}-${r.mo || r.date.slice(5, 7)}-${r.d || r.date.slice(8, 10)}T00:00:00`, SITE_TZ, USE_UTC);
+    const y = pd.y, mo = pd.mo, d = pd.d;
 
     // 旧路径：源目录相对路径 + 旧文件名
     const dirOfOld = path.dirname(oldRel).replace(/\\/g, '/');
