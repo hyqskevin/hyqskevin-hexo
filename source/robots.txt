@@ -1,0 +1,111 @@
+# ============================================================================
+# robots.txt —— hyqskevin.github.io
+# ============================================================================
+# 部署：Hexo 会把 source/ 下的非 md 文件原样拷贝到 public/，无需额外配置。
+# 放置位置：source/robots.txt
+#
+# ⚠️ 与通用版的关键差异：这里采用「检索类必放行 + 训练类可选」的精细策略。
+#    对个人博客来说，训练类 bot（GPTBot / ClaudeBot / Google-Extended /
+#    anthropic-ai）抓走全文去训练，对你几乎没有直接收益，而内容保护价值明确。
+#    检索类 bot（OAI-SearchBot / PerplexityBot / Bingbot / Googlebot）
+#    则是被 AI 引用的命脉，必须放行。
+#
+#    如果你希望内容进入模型训练（扩大影响力），把下方训练类的 Allow 改成
+#    Disallow: / 即可，已按分类标注好。
+# ============================================================================
+
+# ── 检索类：必须放行，否则失去被引用资格 ──────────────────────
+# OAI-SearchBot = ChatGPT 搜索实时检索（引用来源）
+User-agent: OAI-SearchBot
+Allow: /
+
+# ChatGPT-User = 用户在对话中主动触发的抓取（引用来源）
+User-agent: ChatGPT-User
+Allow: /
+
+# PerplexityBot = Perplexity 索引（引用来源，其答案强制展示出处）
+User-agent: PerplexityBot
+Allow: /
+
+# Perplexity-User = 用户触发
+User-agent: Perplexity-User
+Allow: /
+
+# Claude-SearchBot / Claude-User = Anthropic 检索侧
+User-agent: Claude-SearchBot
+Allow: /
+
+User-agent: Claude-User
+Allow: /
+
+# Googlebot = 普通搜索索引，是 AI Overviews / AI Mode 的前提
+User-agent: Googlebot
+Allow: /
+
+# Bingbot = Copilot 与 ChatGPT Search 的索引前提
+User-agent: Bingbot
+Allow: /
+
+User-agent: msnbot
+Allow: /
+
+User-agent: BingPreview
+Allow: /
+
+# Google-Image / Google-Video（图片与视频检索）
+User-agent: Google-Images
+Allow: /
+
+User-agent: Google-Video
+Allow: /
+
+User-agent: Google-News
+Allow: /
+
+# Applebot = Siri / Spotlight 建议
+User-agent: Applebot
+Allow: /
+
+User-agent: facebookexternalhit
+Allow: /
+
+# ── 训练类：个人博客建议不开放 ────────────────────────────────
+# 想让内容进入模型训练，扩大影响力 → 把 Allow 改成 Disallow: /
+User-agent: GPTBot
+Disallow: /
+
+User-agent: ClaudeBot
+Disallow: /
+
+User-agent: anthropic-ai
+Disallow: /
+
+User-agent: Google-Extended
+Disallow: /
+
+User-agent: Applebot-Extended
+Disallow: /
+
+User-agent: Meta-ExternalAgent
+Disallow: /
+
+User-agent: CCBot
+Disallow: /
+
+User-agent: Amazonbot
+Disallow: /
+
+User-agent: Bytespider
+Disallow: /
+
+User-agent: PetalBot
+Disallow: /
+
+# ── 通配：放行其余 ───────────────────────────────────────────
+User-agent: *
+Allow: /
+Disallow: /search/
+Disallow: /*?utm_
+Disallow: /*?from=
+
+Sitemap: https://hyqskevin.github.io/sitemap.xml

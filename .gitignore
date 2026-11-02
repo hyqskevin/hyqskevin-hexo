@@ -7,3 +7,6 @@ public/
 .deploy*/
 _multiconfig.yml
 .workbuddy/
+# GEO 脚本运行记录（一次性迁移用，不入库）
+tools/.permalink-rename-record.json
+tools/.url-structure-record.json

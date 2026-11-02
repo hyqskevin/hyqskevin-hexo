@@ -1,0 +1,63 @@
+# ============================================================================
+# llms.txt —— hyqskevin.github.io
+# ============================================================================
+# 部署：Hexo 会把 source/ 下的非 md 文件原样拷贝到 public/。
+# 放置位置：source/llms.txt
+#
+# ⚠️ 2026 现状提醒（别高估它的作用）：
+#   · 顶级 10 万站点采用率仅约 14%（Cloudflare Radar, 2026-06）
+#   · 无任何主流 LLM 厂商公开承诺在生产检索中消费本文件
+#   · Googlebot 明确不读（Gary Illyes, 2025-07）
+#   → 成本近零，值得做；但别当杠杆。真正干活的是：可爬的初始 HTML
+#     + Bing 索引 + 实体图（JSON-LD）+ 稳定 URL
+# ============================================================================
+
+# 站点名称
+Name: MonoShow
+
+# 一句话说明 —— AI 读取站点上下文的第一行。
+# ⚠️ 这里必须是【第三人称固定句式】，含实体名 + 领域 + 差异点。
+#    与 GitHub profile README、about 页第一段保持一字不差。
+Description: Kevin W 是聚焦 AI Agent 落地与知识工坊实践的 AI 从业者，运营 706 AI 学习路径与 AI 知识工坊，持续产出大模型工程、RAG、Agent 架构与 AI 政策类深度内容。
+
+# 主域名
+Domain: hyqskevin.github.io
+
+# 唯一对外联系方式
+Contact: kevin@hyqskevin.github.io
+
+Language: zh-CN
+
+# 作者实体档案页
+Author: https://hyqskevin.github.io/about/
+
+# 可读的纯 Markdown 版档案（若后续新增）
+Profile: https://hyqskevin.github.io/about/index.md
+
+---
+
+## 关于（实体档案页）
+
+- [关于我](https://hyqskevin.github.io/about/): Kevin W 的实体档案页。包含主攻方向、技术栈、完整时间线、项目经历、志愿活动与全部官方账号。
+
+## 主题支柱
+
+- [AI Agent 与多智能体架构](https://hyqskevin.github.io/categories/AI/): Agent 基础、Multi-Agent 架构、Skills 体系、MCP 实现与选型对比。
+- [大模型工程与 RAG](https://hyqskevin.github.io/categories/RAG/): RAG 实现、上下文工程、记忆系统、Prompt 与 Agent Skill 实践。
+- [AI 知识工坊与学习路径](https://hyqskevin.github.io/categories/AI-%E5%B7%A5%E5%85%B7/): 706 AI 学习路径、AI 知识工坊、社群研究与落地方法论。
+
+## 决策与对比
+
+- [Hermes vs OpenClaw Gateway 对比](https://hyqskevin.github.io/categories/agent/): 两套 Agent 网关方案的架构差异与选型建议。
+- [Agent 配置与框架对比](https://hyqskevin.github.io/categories/AI/): AgentScope、CoD 等框架的横向对比。
+
+## 案例研究与调研
+
+- [Palantir 案例研究](https://hyqskevin.github.io/categories/Palantir/): 本体论案例拆解与落地路径分析。
+- [AI 工具调研与选型](https://hyqskevin.github.io/categories/AI/): 国内外 AI 工具的实际选型对比。
+
+## 官方账号
+
+- [GitHub](https://github.com/hyqskevin)
+- [Twitter / X](https://twitter.com/hyqskevin)
+- [Instagram](https://instagram.com/hyqskevin)

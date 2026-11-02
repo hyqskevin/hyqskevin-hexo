@@ -7,7 +7,9 @@
     "clean": "hexo clean",
     "deploy": "hexo deploy",
     "server": "hexo server",
-    "postinstall": "node tools/patch-mermaid-renderer.js"
+    "postinstall": "node tools/patch-mermaid-renderer.js",
+    "geo:check": "node tools/geo-check.js",
+    "geo:audit": "node tools/geo-check.js --remote"
   },
   "hexo": {
     "version": "8.1.2"
@@ -20,6 +22,7 @@
     "hexo-generator-category": "^2.0.0",
     "hexo-generator-index": "^4.0.0",
     "hexo-generator-searchdb": "^1.5.0",
+    "hexo-generator-sitemap": "^3.0.1",
     "hexo-generator-tag": "^2.0.0",
     "hexo-helper-live2d": "^3.1.1",
     "hexo-renderer-ejs": "^2.0.0",

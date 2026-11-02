@@ -31,6 +31,23 @@ code_dir: downloads/code
 i18n_dir: :lang
 skip_render:
 
+# ==========================================================================
+# GEO 层：脚本注入
+# ==========================================================================
+# tools/geo-inject.js 注册 after_render:html 过滤器，给每个页面注入
+# canonical、Open Graph 与 JSON-LD 实体图谱（Person / WebSite / Organization / Article）。
+#
+# 为什么用过滤器而不是改主题 head.pug：
+#   · 主题 maupassant-hexo 是独立仓库，同步更新会覆盖 head.pug 的改动
+#   · 在 Pug 里内嵌 JSON-LD 极易破坏编译（产物 0 字节且构建不报错）
+#
+# ⚠️ 注意：这是 Hexo 的 scripts 机制（package.json 的 hexo.scripts），
+#    不是 config.inject —— 后者走 injector 机制，要求主题模板里有
+#    `<!-- hexo injector head -->` 标记，maupassant 主题没有这个标记。
+# scripts/ 目录下的所有脚本会被 Hexo 自动加载（script_dir 默认值）
+# tools/geo-inject.js 是同一份文件的副本，改动请同步两边
+# 或直接把 scripts/ 作为唯一来源
+
 # Writing
 new_post_name: :title.md # File name of new posts
 default_layout: post
@@ -64,6 +81,42 @@ index_generator:
   path: ''
   per_page: 10
   order_by: -date
+
+# ==========================================================================
+# GEO 层：sitemap
+# ==========================================================================
+# 需要 npm install hexo-generator-sitemap（已加入 package.json dependencies）
+#
+# 为什么必须有 sitemap：
+#   · 新鲜度约占 Perplexity 排名的 44.2% 权重
+#   · 76.4% 的 Perplexity 引用来自 30 天内更新过的页面
+#   · sitemap 的 lastmod 是 AI 判断内容新鲜度的主要依据之一
+#
+# permalink 的 lastmod 依赖 front-matter 的 updated 字段。
+# 建议给重要文章补 updated，Hexo 会自动用它作为 lastmod。
+sitemap:
+  path: sitemap.xml
+  exclude:
+    - '404.html'
+    - 'archives/index.html'
+    - 'categories/index.html'
+    - 'tags/index.html'
+
+# ==========================================================================
+# GEO 层：permalink 说明
+# ==========================================================================
+# 当前: :year/:month/:day/:title/
+#
+# ⚠️ :title 取的是【去掉扩展名的文件名】。若文件名带日期前缀
+#    (如 2026-10-18-xxx.md)，URL 会变成
+#    /2026/10/17/2026-10-18-xxx/  ← 日期出现两次
+#
+# 修复方式：用 node tools/fix-permalink-titles.js 剥掉文件名日期前缀，
+# 改后 URL 变为 /2026/10/17/xxx/，日期只出现一次且与 front-matter 一致。
+#
+# ⚠️ 不要改成不带日期的 permalink —— 现有 204 篇文章的 URL 会全部失效，
+#    而 GitHub Pages 不支持 301 重定向，会造成大规模死链，是净损失。
+# ==========================================================================
 
 # Category & Tag
 default_category: uncategorized
@@ -108,6 +161,8 @@ deploy:
   message: "site update: {{ now('YYYY-MM-DD HH:mm') }}"
 
 # mermaid
+mermaid_disabled_for_test:
+  enable: false
 mermaid:
   enable: true
   version: "11.4.0"
