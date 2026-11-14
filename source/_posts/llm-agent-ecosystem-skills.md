@@ -150,8 +150,8 @@ star 数之所以能堆到 51 万,核心原因是 awesome-* 模式「低创作�
 
 两条非仓库类的深度观察,帮你理解生态正在往哪里走:
 
-- **OpenAI GPT-6 家族实用指南:选型、提示词与长任务管理**([阅读](https://aihot.virxact.com/api/v1/items/cw97qi7nc5ucehymkc1k9s6zk))— GPT-6 Astra / Sol / Luna + 推理档位 + 速度模式选择,适合需要为不同任务挑不同档位的工程团队。
-- **Baseten 实测:LLM 自动生成的推理引擎比 vLLM 快最多 90%**([阅读](https://aihot.virxact.com/api/v1/items/uwm1ml1igd8k2u81g14uf8pc3))— Claude Code 自动构建 VibeQwen 推理引擎,单流解码比 vLLM 0.25.1 快 90%,值得所有关心推理成本的人读一遍。
+- **OpenAI GPT-6 家族实用指南:选型、提示词与长任务管理**([阅读](https://aihot.news/items/cw97qi7nc5ucehymkc1k9s6zk))— GPT-6 Astra / Sol / Luna + 推理档位 + 速度模式选择,适合需要为不同任务挑不同档位的工程团队。
+- **Baseten 实测:LLM 自动生成的推理引擎比 vLLM 快最多 90%**([阅读](https://aihot.news/items/uwm1ml1igd8k2u81g14uf8pc3))— Claude Code 自动构建 VibeQwen 推理引擎,单流解码比 vLLM 0.25.1 快 90%,值得所有关心推理成本的人读一遍。
 
 ## 小结
 

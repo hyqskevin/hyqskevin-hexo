@@ -105,7 +105,7 @@ Layer 5: 学术 / ArXiv
   { "name": "Google DeepMind",  "url": "https://deepmind.google/blog/rss.xml", "category": "AI", "tags": ["google","deepmind"] },
   { "name": "Google AI Blog",   "url": "https://blog.google/innovation-and-ai/technology/ai/rss/", "category": "AI", "tags": ["google"] },
   { "name": "Anthropic News",   "url": "https://www.anthropic.com/news", "category": "AI", "tags": ["anthropic","claude"], "scrape": true },
-  { "name": "AI HOT",           "url": "https://aihot.virxact.com/feed.xml", "category": "AI", "tags": ["热点"] }
+  { "name": "AI HOT",           "url": "https://aihot.news/feed.xml", "category": "AI", "tags": ["热点"] }
 ]
 ```
 
