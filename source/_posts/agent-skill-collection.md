@@ -345,13 +345,13 @@ stars: 0（站点）
 
 - [luxueliu-agent-discipline-skills](https://blog.yeyupiaoling.cn/article/1791149995294?lang=en) — 4 个单文件工程纪律 Skill，一行命令安装
 - [Launch Post (Grade A)](https://www.skillsdirectory.com/skills/jackneil-launch-post) — Claude Skill：自动发布 X/Twitter 公告
-- [PromptArmor Databricks Genie 披露](https://aihot.virxact.com/api/v1/items/dfcis3hxowljt45i0bvyi3f0n) — Skill 安全风险 case：企业内审 Skill 来源是刚需
+- [PromptArmor Databricks Genie 披露](https://aihot.news/items/dfcis3hxowljt45i0bvyi3f0n) — Skill 安全风险 case：企业内审 Skill 来源是刚需
 - [agent-reach](https://lobehub.com/en/skills/panniantong-agent-reach-skill) — 16 平台统一接入（已在 4.2 详解）
 
 ### 5.4 新功能与平台（3 条）
 
-- [Claude Code 云端会话](https://aihot.virxact.com/api/v1/items/sxr71auxicu8uk3e4bqxol02h) — 每个任务独占 VM，可并行 + 以分支收尾，Pro/Max/Team/Enterprise 免费
-- [Claude Code mods 入门](https://aihot.virxact.com/api/v1/items/sbvvdrkyjbtob4gp4iwwtyar1) — Token Weather 上下文窗口预报插件，mods = hooks 形式运行的 JS/TS 模块
+- [Claude Code 云端会话](https://aihot.news/items/sxr71auxicu8uk3e4bqxol02h) — 每个任务独占 VM，可并行 + 以分支收尾，Pro/Max/Team/Enterprise 免费
+- [Claude Code mods 入门](https://aihot.news/items/sbvvdrkyjbtob4gp4iwwtyar1) — Token Weather 上下文窗口预报插件，mods = hooks 形式运行的 JS/TS 模块
 
 ## 六、Skill 生态的 5 段 takeaway
 

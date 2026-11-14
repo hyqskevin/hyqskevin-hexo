@@ -137,7 +137,7 @@ const svg = createAvatar(adventurer, {
 
 ### 3.1 Google 发布 Nano Banana 2.1（行业信号）
 
-**来源**：<https://aihot.virxact.com/api/v1/items/d17jcexm93lo85zkz3iil08c9>
+**来源**：<https://aihot.news/items/d17jcexm93lo85zkz3iil08c9>
 
 Google 把 Nano Banana 2.1 的 1K 分辨率图定价压到每张 0.034 美元，意味着批量出图成本已经低于人工设计的 1/10。这条新闻本身不是工具，但是本期未分类里最重要的「价格锚点」——它直接重定义了下文所有 AI 绘图工具的合理性边界。
 
@@ -183,7 +183,7 @@ Google 把 Nano Banana 2.1 的 1K 分辨率图定价压到每张 0.034 美元，
 
 ### 4.3 Reflection 即将发布 501B 开源模型 Beam
 
-**来源**：<https://aihot.virxact.com/api/v1/items/qy7y0cfu1wbum1ej9urwylfxr>
+**来源**：<https://aihot.news/items/qy7y0cfu1wbum1ej9urwylfxr>
 
 501B 参数规模的开源大模型，Reflection 宣布本月内放权重。在 Llama、Qwen、DeepSeek 之外，501B 级别的新玩家入局意味着开源大模型的天花板又被抬高了一截，值得关注推理部署成本与 license。
 
